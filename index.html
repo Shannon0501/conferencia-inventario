@@ -1,0 +1,1938 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conferência de Inventário</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Archivo+Expanded:wght@700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#15181d;
+  --surface:#1f242c;
+  --surface-2:#262c35;
+  --line:#363d49;
+  --line-soft:#2a313c;
+  --text:#e8eaed;
+  --text-dim:#93a0b0;
+  --text-faint:#5c6472;
+  --amber:#e8a23d;
+  --amber-dim:#5a4326;
+  --teal:#3fb6a8;
+  --teal-dim:#1f3d39;
+  --red:#e2604f;
+  --red-dim:#4a2722;
+  --radius:10px;
+  --mono: 'JetBrains Mono', monospace;
+  --display: 'Archivo Expanded', 'Archivo', sans-serif;
+  --body: 'Inter', sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--body);
+  min-height:100vh;
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(63,182,168,0.05), transparent 45%),
+    radial-gradient(circle at 90% 10%, rgba(232,162,61,0.04), transparent 40%);
+}
+
+/* ===== Header ===== */
+header{
+  padding:28px 32px 22px;
+  border-bottom:1px solid var(--line);
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:16px;
+}
+.brand{display:flex; align-items:center; gap:14px;}
+.brand-mark{
+  width:38px; height:38px;
+  border:2px solid var(--amber);
+  border-radius:6px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-weight:700; font-size:13px;
+  color:var(--amber);
+  flex-shrink:0;
+  background:var(--amber-dim);
+}
+h1{
+  font-family:var(--display);
+  font-weight:800;
+  font-size:22px;
+  letter-spacing:0.01em;
+  margin:0;
+  text-transform:uppercase;
+}
+.subtitle{
+  color:var(--text-dim);
+  font-size:13px;
+  margin-top:3px;
+  font-family:var(--mono);
+}
+.status-pill{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--text-dim);
+  border:1px solid var(--line);
+  padding:6px 12px;
+  border-radius:20px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--text-faint);}
+.status-pill.ready .status-dot{background:var(--teal); box-shadow:0 0 8px var(--teal);}
+
+main{padding:32px; max-width:1400px; margin:0 auto;}
+
+/* ===== Upload Section ===== */
+.section-label{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--text-faint);
+  margin:0 0 14px 2px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.section-label::after{
+  content:'';
+  flex:1;
+  height:1px;
+  background:var(--line-soft);
+}
+
+.upload-grid{
+  display:grid;
+  grid-template-columns:repeat(5, 1fr);
+  gap:14px;
+  margin-bottom:28px;
+}
+@media (max-width: 1100px){ .upload-grid{grid-template-columns:repeat(2,1fr);} }
+@media (max-width: 600px){ .upload-grid{grid-template-columns:1fr;} }
+
+.slot{
+  position:relative;
+  background:var(--surface);
+  border:1.5px dashed var(--line);
+  border-radius:var(--radius);
+  padding:18px 16px 16px;
+  cursor:pointer;
+  transition:border-color .18s, background .18s, transform .12s;
+  min-height:148px;
+  display:flex;
+  flex-direction:column;
+}
+.slot:hover{border-color:var(--text-faint); background:var(--surface-2);}
+.slot.filled{border-style:solid; border-color:var(--teal); background:var(--teal-dim);}
+.slot.dragover{border-color:var(--amber); background:var(--amber-dim); transform:scale(1.01);}
+.slot input{display:none;}
+.slot-num{
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--text-faint);
+  letter-spacing:0.08em;
+}
+.slot.filled .slot-num{color:var(--teal);}
+.slot-name{
+  font-family:var(--display);
+  font-weight:700;
+  font-size:15px;
+  margin-top:6px;
+  text-transform:uppercase;
+  letter-spacing:0.01em;
+}
+.slot-cols{
+  font-family:var(--mono);
+  font-size:10.5px;
+  color:var(--text-faint);
+  margin-top:8px;
+  line-height:1.5;
+  flex:1;
+}
+.slot-file{
+  margin-top:10px;
+  font-size:11.5px;
+  color:var(--teal);
+  font-family:var(--mono);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.slot-file svg{flex-shrink:0;}
+.slot-clear{
+  position:absolute; top:12px; right:12px;
+  background:none; border:none; color:var(--text-faint);
+  cursor:pointer; font-size:16px; line-height:1;
+  display:none;
+  width:20px; height:20px;
+  border-radius:4px;
+}
+.slot.filled .slot-clear{display:block; color:var(--teal);}
+.slot-clear:hover{background:rgba(255,255,255,0.08);}
+
+/* ===== Action bar ===== */
+.action-bar{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:36px;
+  flex-wrap:wrap;
+}
+button{font-family:var(--body); cursor:pointer;}
+.btn-primary{
+  background:var(--amber);
+  color:#1c1306;
+  border:none;
+  padding:13px 26px;
+  border-radius:8px;
+  font-weight:700;
+  font-size:14px;
+  letter-spacing:0.01em;
+  display:flex; align-items:center; gap:8px;
+  transition:filter .15s, transform .1s;
+}
+.btn-primary:hover:not(:disabled){filter:brightness(1.08);}
+.btn-primary:active:not(:disabled){transform:scale(0.98);}
+.btn-primary:disabled{
+  background:var(--line);
+  color:var(--text-faint);
+  cursor:not-allowed;
+}
+.action-hint{
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--text-faint);
+}
+.action-hint b{color:var(--amber); font-weight:600;}
+
+.error-box{
+  background:var(--red-dim);
+  border:1px solid var(--red);
+  color:#ffcfc7;
+  padding:14px 16px;
+  border-radius:8px;
+  font-size:13px;
+  margin-bottom:24px;
+  font-family:var(--mono);
+  white-space:pre-wrap;
+  display:none;
+}
+.error-box.show{display:block;}
+
+/* ===== Results ===== */
+#results{display:none;}
+#results.show{display:block;}
+
+.summary-row{
+  display:flex;
+  gap:14px;
+  margin-bottom:24px;
+  flex-wrap:wrap;
+}
+.summary-card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:16px 20px;
+  min-width:150px;
+  flex:1;
+}
+.summary-card .label{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:0.1em;
+  text-transform:uppercase; color:var(--text-faint);
+}
+.summary-card .value{
+  font-family:var(--display); font-weight:800; font-size:26px;
+  margin-top:6px;
+}
+.summary-card.amber .value{color:var(--amber);}
+.summary-card.teal .value{color:var(--teal);}
+.summary-card.red .value{color:var(--red);}
+
+/* Filter bar */
+.filter-bar{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:16px 18px;
+  margin-bottom:18px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:14px;
+  align-items:flex-end;
+}
+.filter-group{display:flex; flex-direction:column; gap:6px;}
+.filter-group label{
+  font-family:var(--mono); font-size:10px; letter-spacing:0.08em;
+  text-transform:uppercase; color:var(--text-faint);
+}
+.filter-group select, .filter-group input{
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  color:var(--text);
+  padding:9px 10px;
+  border-radius:6px;
+  font-family:var(--mono);
+  font-size:13px;
+  min-width:90px;
+}
+.filter-group select{min-width:170px;}
+.filter-group input:focus, .filter-group select:focus{outline:1.5px solid var(--amber); border-color:var(--amber);}
+.filter-group.range-inputs{flex-direction:row; align-items:center; gap:6px; margin-top:14px;}
+.filter-group.range-inputs input{width:90px;}
+.filter-group.search-group input{min-width:220px;}
+.filter-actions{display:flex; gap:8px; margin-left:auto;}
+
+/* Multi-select dropdown (Setor / Classificação) */
+.multiselect{position:relative;}
+.multiselect-btn{
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  color:var(--text);
+  padding:9px 10px;
+  border-radius:6px;
+  font-family:var(--mono);
+  font-size:13px;
+  min-width:170px;
+  max-width:220px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  cursor:pointer;
+}
+.multiselect-btn:hover{border-color:var(--text-faint);}
+.multiselect.open .multiselect-btn{border-color:var(--amber); outline:1.5px solid var(--amber);}
+.multiselect-label{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  text-align:left;
+}
+.multiselect-arrow{color:var(--text-faint); font-size:11px; flex-shrink:0; transition:transform .15s;}
+.multiselect.open .multiselect-arrow{transform:rotate(180deg);}
+.multiselect-panel{
+  display:none;
+  position:absolute;
+  top:calc(100% + 6px);
+  left:0;
+  z-index:30;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  border-radius:8px;
+  min-width:240px;
+  max-width:320px;
+  max-height:280px;
+  overflow-y:auto;
+  box-shadow:0 8px 24px rgba(0,0,0,0.35);
+  padding:6px;
+}
+.multiselect.open .multiselect-panel{display:block;}
+.multiselect-search{
+  width:100%;
+  background:var(--surface);
+  border:1px solid var(--line);
+  color:var(--text);
+  padding:7px 9px;
+  border-radius:6px;
+  font-family:var(--mono);
+  font-size:12.5px;
+  margin-bottom:6px;
+  box-sizing:border-box;
+}
+.multiselect-actions{
+  display:flex;
+  gap:6px;
+  padding:0 2px 6px;
+  border-bottom:1px solid var(--line-soft);
+  margin-bottom:4px;
+}
+.multiselect-actions button{
+  background:none;
+  border:none;
+  color:var(--teal);
+  font-family:var(--mono);
+  font-size:11px;
+  cursor:pointer;
+  padding:2px 4px;
+}
+.multiselect-actions button:hover{text-decoration:underline;}
+.multiselect-option{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:7px 8px;
+  border-radius:5px;
+  cursor:pointer;
+  font-size:12.5px;
+  font-family:var(--mono);
+  color:var(--text-dim);
+}
+.multiselect-option:hover{background:rgba(255,255,255,0.04); color:var(--text);}
+.multiselect-option input{
+  accent-color:var(--amber);
+  width:14px; height:14px;
+  flex-shrink:0;
+  cursor:pointer;
+}
+.multiselect-option.checked{color:var(--text);}
+.multiselect-empty{
+  padding:10px 8px;
+  color:var(--text-faint);
+  font-size:12px;
+  font-family:var(--mono);
+  text-align:center;
+}
+
+.btn-ghost{
+  background:transparent;
+  border:1px solid var(--line);
+  color:var(--text-dim);
+  padding:9px 16px;
+  border-radius:6px;
+  font-size:12.5px;
+  font-family:var(--mono);
+}
+.btn-ghost:hover{border-color:var(--text-faint); color:var(--text);}
+.btn-ghost.active-filter{border-color:var(--amber); color:var(--amber);}
+.btn-apply{
+  background:var(--amber);
+  border:1px solid var(--amber);
+  color:#1c1306;
+  padding:9px 18px;
+  border-radius:6px;
+  font-size:12.5px;
+  font-weight:700;
+  font-family:var(--mono);
+  letter-spacing:0.02em;
+  transition:filter .15s, transform .1s;
+}
+.btn-apply:hover{filter:brightness(1.08);}
+.btn-apply:active{transform:scale(0.97);}
+.btn-apply.pending{
+  box-shadow:0 0 0 3px rgba(232,162,61,0.25);
+}
+
+.column-target select{cursor:pointer;}
+
+/* Table */
+.table-wrap{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  overflow:auto;
+  max-height:62vh;
+  margin-bottom:22px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+  font-family:var(--mono);
+  min-width:1250px;
+}
+thead th{
+  position:sticky;
+  top:0;
+  background:var(--surface-2);
+  color:var(--text-dim);
+  text-align:left;
+  padding:11px 12px;
+  font-size:10.5px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  border-bottom:1px solid var(--line);
+  white-space:nowrap;
+  cursor:pointer;
+  user-select:none;
+}
+thead th:hover{color:var(--text);}
+thead th .arrow{opacity:0.4; margin-left:4px;}
+thead th.sorted .arrow{opacity:1; color:var(--amber);}
+tbody td{
+  padding:9px 12px;
+  border-bottom:1px solid var(--line-soft);
+  white-space:nowrap;
+}
+tbody tr:hover{background:rgba(255,255,255,0.025);}
+tbody tr.row-red{background:rgba(226,96,79,0.16);}
+tbody tr.row-red:hover{background:rgba(226,96,79,0.24);}
+tbody tr.row-yellow{background:rgba(232,162,61,0.16);}
+tbody tr.row-yellow:hover{background:rgba(232,162,61,0.24);}
+tbody tr:last-child td{border-bottom:none;}
+td.num{text-align:right; font-variant-numeric:tabular-nums;}
+td.neg{color:var(--red);}
+td.pos{color:var(--teal);}
+.classif-badge{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:4px;
+  font-size:11px;
+  background:var(--line-soft);
+  color:var(--text-dim);
+}
+.empty-state{
+  text-align:center;
+  padding:50px 20px;
+  color:var(--text-faint);
+  font-family:var(--mono);
+  font-size:13px;
+}
+
+.results-footer{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:40px;
+  flex-wrap:wrap;
+  gap:14px;
+}
+.row-count{font-family:var(--mono); font-size:12px; color:var(--text-faint);}
+.export-actions{display:flex; gap:10px;}
+.btn-export{
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  color:var(--text);
+  padding:11px 20px;
+  border-radius:8px;
+  font-size:13px;
+  font-weight:600;
+  display:flex; align-items:center; gap:8px;
+  font-family:var(--body);
+}
+.btn-export:hover{border-color:var(--teal); color:var(--teal);}
+.btn-export.print:hover{border-color:var(--amber); color:var(--amber);}
+
+@media print{
+  header, .upload-grid, .action-bar, .filter-bar, .summary-row, .results-footer{display:none !important;}
+  #results > .section-label{display:none !important;}
+  body{background:#fff; color:#000;}
+  .table-wrap{
+    max-height:none !important;
+    height:auto !important;
+    overflow:visible !important;
+    border:none;
+    box-shadow:none;
+  }
+  table{min-width:0;}
+  thead th{
+    position:static !important;
+    background:#eee !important;
+    color:#000 !important;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+  tbody td{color:#000 !important; border-color:#ccc !important;}
+  tr.row-red{background:#fbdcd8 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  tr.row-yellow{background:#fbecc4 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  .classif-badge{background:#eee !important; color:#000 !important; border:1px solid #ccc;}
+  td.neg{color:#b3261e !important;}
+  td.pos{color:#0f6b5c !important;}
+  main{padding:0;}
+  tr{page-break-inside:avoid;}
+  thead{display:table-header-group;}
+}
+
+.spinner{
+  width:15px; height:15px;
+  border:2px solid rgba(0,0,0,0.25);
+  border-top-color:#1c1306;
+  border-radius:50%;
+  animation:spin 0.7s linear infinite;
+  display:none;
+}
+.spinner.show{display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Modal de Histórico */
+.modal-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  z-index:100;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+.modal-overlay.show{display:flex;}
+.modal-panel{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:12px;
+  width:100%;
+  max-width:880px;
+  max-height:85vh;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.modal-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:18px 22px;
+  border-bottom:1px solid var(--line);
+}
+.modal-header h2{
+  font-family:var(--display);
+  font-size:16px;
+  text-transform:uppercase;
+  margin:0;
+}
+.modal-close{
+  background:none; border:none; color:var(--text-faint);
+  font-size:18px; cursor:pointer; width:28px; height:28px; border-radius:6px;
+}
+.modal-close:hover{background:rgba(255,255,255,0.08); color:var(--text);}
+.modal-body{
+  padding:18px 22px;
+  overflow-y:auto;
+  flex:1;
+}
+.history-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:14px 16px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  margin-bottom:10px;
+  cursor:pointer;
+  transition:border-color .15s, background .15s;
+}
+.history-item:hover{border-color:var(--teal); background:rgba(63,182,168,0.06);}
+.history-item-info{display:flex; flex-direction:column; gap:4px;}
+.history-item-date{font-family:var(--mono); font-size:13px; color:var(--text);}
+.history-item-meta{font-family:var(--mono); font-size:11.5px; color:var(--text-faint);}
+.history-item-stats{display:flex; gap:14px; align-items:center; flex-shrink:0;}
+.history-stat{text-align:right;}
+.history-stat .num{font-family:var(--mono); font-weight:700; font-size:15px;}
+.history-stat .lbl{font-family:var(--mono); font-size:9.5px; color:var(--text-faint); text-transform:uppercase;}
+.history-item-load{
+  background:var(--teal-dim); color:var(--teal); border:1px solid var(--teal);
+  padding:6px 12px; border-radius:6px; font-family:var(--mono); font-size:11.5px;
+  flex-shrink:0;
+}
+.history-item-delete{
+  background:none; border:none; color:var(--text-faint);
+  cursor:pointer; padding:6px; border-radius:6px; flex-shrink:0;
+}
+.history-item-delete:hover{background:var(--red-dim); color:var(--red);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">5×1</div>
+    <div>
+      <h1>Conferência de Inventário</h1>
+      <div class="subtitle">CUSTO REF · CUSTO 2 · ULT_INV · IS_COLLECTOR · ALPHA7 → planilha consolidada</div>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:12px;">
+    <button class="btn-ghost" id="historyBtn" style="white-space:nowrap;">📋 Histórico</button>
+    <div class="status-pill" id="statusPill">
+      <span class="status-dot"></span>
+      <span id="statusText">0 de 5 planilhas carregadas</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="section-label">Envio das planilhas</div>
+  <div class="upload-grid" id="uploadGrid"></div>
+
+  <div class="action-bar">
+    <button class="btn-primary" id="processBtn" disabled>
+      <span class="spinner" id="spinner"></span>
+      <span id="processBtnLabel">Processar planilhas</span>
+    </button>
+    <span class="action-hint" id="actionHint">Envie as <b>5 planilhas</b> para liberar o processamento.</span>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div id="results">
+    <div class="section-label">Resultado da conferência</div>
+
+    <div class="summary-row" id="summaryRow"></div>
+
+    <div class="filter-bar">
+      <div class="filter-group search-group">
+        <label>Buscar</label>
+        <input type="text" id="searchInput" placeholder="código, descrição, setor...">
+      </div>
+      <div class="filter-group">
+        <label>Setor</label>
+        <div class="multiselect" id="setorFilter">
+          <button type="button" class="multiselect-btn" data-target="setorFilter">
+            <span class="multiselect-label">Todos</span>
+            <span class="multiselect-arrow">▾</span>
+          </button>
+          <div class="multiselect-panel" id="setorFilterPanel"></div>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Classificação</label>
+        <div class="multiselect" id="classifFilter">
+          <button type="button" class="multiselect-btn" data-target="classifFilter">
+            <span class="multiselect-label">Todas</span>
+            <span class="multiselect-arrow">▾</span>
+          </button>
+          <div class="multiselect-panel" id="classifFilterPanel"></div>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Cor (ULT_INV)</label>
+        <div class="multiselect" id="corFilter">
+          <button type="button" class="multiselect-btn" data-target="corFilter">
+            <span class="multiselect-label">Todas</span>
+            <span class="multiselect-arrow">▾</span>
+          </button>
+          <div class="multiselect-panel" id="corFilterPanel"></div>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Coluna do valor</label>
+        <select id="valueColumn">
+          <option value="QTD_A">Qtd A. (Estoque Apurado)</option>
+          <option value="DIFER">Difer.</option>
+          <option value="CUSTO_T">Custo T.</option>
+          <option value="CUSTO_U">Custo U.</option>
+          <option value="QTD_T">Qtd T.</option>
+          <option value="QTD_U">Qtd U.</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Condição</label>
+        <select id="valueCondition">
+          <option value="any">Qualquer valor</option>
+          <option value="gt">Maior que</option>
+          <option value="gte">Maior ou igual a</option>
+          <option value="lt">Menor que</option>
+          <option value="lte">Menor ou igual a</option>
+          <option value="between">Entre</option>
+          <option value="eq">Igual a</option>
+          <option value="neq">Diferente de</option>
+        </select>
+      </div>
+      <div class="filter-group range-inputs" id="rangeInputs">
+        <input type="number" id="valueMin" placeholder="mín" step="any">
+        <span style="color:var(--text-faint);" id="rangeDash">—</span>
+        <input type="number" id="valueMax" placeholder="máx" step="any">
+      </div>
+      <div class="filter-group">
+        <label>Coluna do valor 2</label>
+        <select id="valueColumn2">
+          <option value="QTD_A">Qtd A. (Estoque Apurado)</option>
+          <option value="DIFER">Difer.</option>
+          <option value="CUSTO_T">Custo T.</option>
+          <option value="CUSTO_U">Custo U.</option>
+          <option value="QTD_T">Qtd T.</option>
+          <option value="QTD_U">Qtd U.</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Condição 2</label>
+        <select id="valueCondition2">
+          <option value="any">Qualquer valor</option>
+          <option value="gt">Maior que</option>
+          <option value="gte">Maior ou igual a</option>
+          <option value="lt">Menor que</option>
+          <option value="lte">Menor ou igual a</option>
+          <option value="between">Entre</option>
+          <option value="eq">Igual a</option>
+          <option value="neq">Diferente de</option>
+        </select>
+      </div>
+      <div class="filter-group range-inputs" id="rangeInputs2">
+        <input type="number" id="valueMin2" placeholder="mín" step="any">
+        <span style="color:var(--text-faint);" id="rangeDash2">—</span>
+        <input type="number" id="valueMax2" placeholder="máx" step="any">
+      </div>
+      <div class="filter-actions">
+        <button class="btn-ghost" id="clearFiltersBtn">Limpar filtros</button>
+        <button class="btn-apply" id="applyFiltersBtn">OK · Aplicar filtros</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table id="resultTable">
+        <thead><tr id="tableHeadRow"></tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="results-footer">
+      <div class="row-count" id="rowCount"></div>
+      <div class="export-actions">
+        <button class="btn-export" id="downloadBtn">⬇ Baixar planilha (.xlsx)</button>
+        <button class="btn-export print" id="printBtn">🖨 Imprimir</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Modal de Histórico -->
+<div class="modal-overlay" id="historyOverlay">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h2>Histórico de processamentos</h2>
+      <button class="modal-close" id="historyCloseBtn">✕</button>
+    </div>
+    <div class="modal-body" id="historyBody">
+      <div class="empty-state">Carregando...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   CONFIGURAÇÃO DAS 5 PLANILHAS
+   ========================================================= */
+const SHEET_DEFS = [
+  {
+    key: 'custoRef',
+    name: 'CUSTO REF',
+    ext: ['.xlsx'],
+    // colunas usadas pelo app (a planilha real pode ter mais colunas além destas, que são ignoradas)
+    cols: ['Código de Barras', 'Produto', 'Etiqueta', 'Preço Referencial'],
+    displayCols: ['Código de Barras', 'Produto', 'Etiqueta', 'Preço Referencial', '+ outras 15 colunas (ignoradas)']
+  },
+  {
+    key: 'custo2',
+    name: 'CUSTO 2',
+    ext: ['.xlsx'],
+    cols: ['Produto', 'Custo'],
+    displayCols: ['Produto', 'Custo', '+ outras 8 colunas (ignoradas)']
+  },
+  {
+    key: 'ultInv',
+    name: 'ULT_INV',
+    ext: ['.xls', '.xlsx'],
+    cols: ['Un. Neg.', 'Embalagem', 'Cód. Barras', 'Etiqueta', 'Diferença'],
+    displayCols: ['Un. Neg.', 'Embalagem', 'Cód. Barras', 'Etiqueta', 'Diferença'],
+    headerRow: 2,     // nome das colunas está na linha 2 (1-indexed)
+    skipFooterIfTotal: true // descarta a última linha se for "Total"
+  },
+  {
+    key: 'isCollector',
+    name: 'IS_COLLECTOR',
+    ext: ['.xlsx'],
+    cols: ['IDINVENTARIO','SETOR','AREA','CODIGO','DESCRICAO','DESCINFO1','DESCINFO2','QTD','INFOEXTRA','DATAHORA'],
+    altCols: { 'QTD': ['QTD U.'] }, // aceita "QTD U." como nome alternativo de "QTD"
+    displayCols: ['IDINVENTARIO','SETOR','AREA','CODIGO','DESCRICAO','DESCINFO1','DESCINFO2','QTD','INFOEXTRA','DATAHORA']
+  },
+  {
+    key: 'alpha7',
+    name: 'ALPHA7',
+    ext: ['.xlsx'],
+    cols: ['Código de Barras','Embalagem','Etiqueta','Classificação Principal','Divergência','Estoque Contado','Estoque Apurado','Estoque Teórico','Fabricante','Movimentação Fracionada','Estoque Contado Ant.'],
+    displayCols: ['Código de Barras','Embalagem','Etiqueta','Classificação Principal','Divergência','Estoque Contado','Estoque Apurado','Estoque Teórico','Fabricante','Movimentação Fracionada','Estoque Contado Ant.']
+  }
+];
+
+const state = {
+  files: {}, // key -> {file, data: [rows as objects], name}
+  result: [],
+  filtered: [],
+  sortKey: null,
+  sortDir: 1
+};
+
+/* =========================================================
+   SUPABASE — histórico de processamentos
+   ========================================================= */
+// Substitua pelos dados do SEU projeto Supabase (Project Settings -> API)
+const SUPABASE_URL = 'COLE_AQUI_SUA_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'COLE_AQUI_SUA_SUPABASE_ANON_KEY';
+
+let supabaseClient = null;
+try {
+  if (SUPABASE_URL.startsWith('http') && SUPABASE_ANON_KEY.length > 10) {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch (e) {
+  console.warn('Supabase não configurado:', e);
+}
+
+function supabaseDisponivel() {
+  return !!supabaseClient;
+}
+
+async function salvarHistoricoSupabase(result, contadores) {
+  if (!supabaseDisponivel()) return; // sem Supabase configurado, não faz nada
+
+  const totalDifer = result.reduce((s, r) => s + r.DIFER, 0);
+  const totalCustoT = result.reduce((s, r) => s + r.CUSTO_T, 0);
+
+  const registro = {
+    processado_em: new Date().toISOString(),
+    total_itens: result.length,
+    total_difer: totalDifer,
+    total_custo_t: totalCustoT,
+    itens_vermelho: contadores.countRed || 0,
+    itens_amarelo: contadores.countYellow || 0,
+    sem_match_alpha: contadores.notFoundInAlpha || 0,
+    sem_match_custo: contadores.notFoundInCusto || 0,
+    itens_extras_apurado_zero: contadores.addedFromZeroContado || 0,
+    linhas: result // planilha completa, em JSON (coluna tipo jsonb no Supabase)
+  };
+
+  try {
+    const { error } = await supabaseClient.from('processamentos').insert(registro);
+    if (error) console.warn('Falha ao salvar histórico no Supabase:', error.message);
+  } catch (e) {
+    console.warn('Erro ao salvar histórico:', e);
+  }
+}
+
+async function listarHistoricoSupabase() {
+  if (!supabaseDisponivel()) return [];
+  const { data, error } = await supabaseClient
+    .from('processamentos')
+    .select('id, processado_em, total_itens, total_difer, total_custo_t, itens_vermelho, itens_amarelo')
+    .order('processado_em', { ascending: false })
+    .limit(50);
+  if (error) { console.warn('Falha ao listar histórico:', error.message); return []; }
+  return data || [];
+}
+
+async function buscarProcessamentoCompleto(id) {
+  if (!supabaseDisponivel()) return null;
+  const { data, error } = await supabaseClient
+    .from('processamentos')
+    .select('linhas')
+    .eq('id', id)
+    .single();
+  if (error) { console.warn('Falha ao buscar processamento:', error.message); return null; }
+  return data ? data.linhas : null;
+}
+
+async function excluirProcessamentoSupabase(id) {
+  if (!supabaseDisponivel()) return false;
+  const { error } = await supabaseClient.from('processamentos').delete().eq('id', id);
+  if (error) { console.warn('Falha ao excluir processamento:', error.message); return false; }
+  return true;
+}
+
+/* =========================================================
+   MODAL DE HISTÓRICO
+   ========================================================= */
+const historyOverlay = document.getElementById('historyOverlay');
+const historyBody = document.getElementById('historyBody');
+
+document.getElementById('historyBtn').addEventListener('click', abrirHistorico);
+document.getElementById('historyCloseBtn').addEventListener('click', () => historyOverlay.classList.remove('show'));
+historyOverlay.addEventListener('click', (e) => { if (e.target === historyOverlay) historyOverlay.classList.remove('show'); });
+
+async function abrirHistorico() {
+  historyOverlay.classList.add('show');
+
+  if (!supabaseDisponivel()) {
+    historyBody.innerHTML = `<div class="empty-state">
+      O histórico no Supabase ainda não foi configurado neste app.<br><br>
+      Veja o passo a passo de configuração na conversa, ou peça para configurar.
+    </div>`;
+    return;
+  }
+
+  historyBody.innerHTML = `<div class="empty-state">Carregando histórico...</div>`;
+  const items = await listarHistoricoSupabase();
+
+  if (!items.length) {
+    historyBody.innerHTML = `<div class="empty-state">Nenhum processamento salvo ainda.</div>`;
+    return;
+  }
+
+  historyBody.innerHTML = items.map(item => {
+    const data = new Date(item.processado_em);
+    const dataFmt = data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    return `
+      <div class="history-item" data-id="${item.id}">
+        <div class="history-item-info">
+          <div class="history-item-date">${dataFmt}</div>
+          <div class="history-item-meta">${item.itens_vermelho || 0} vermelho(s) · ${item.itens_amarelo || 0} amarelo(s)</div>
+        </div>
+        <div class="history-item-stats">
+          <div class="history-stat">
+            <div class="num">${item.total_itens}</div>
+            <div class="lbl">itens</div>
+          </div>
+          <div class="history-stat">
+            <div class="num">${fmtCurrency(item.total_custo_t || 0)}</div>
+            <div class="lbl">custo t.</div>
+          </div>
+          <button class="history-item-load" data-action="load" data-id="${item.id}">Abrir</button>
+          <button class="history-item-delete" data-action="delete" data-id="${item.id}" title="Excluir">🗑</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  historyBody.querySelectorAll('[data-action="load"]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      btn.textContent = '...';
+      const linhas = await buscarProcessamentoCompleto(id);
+      if (linhas) {
+        state.result = linhas;
+        buildClassifFilter();
+        buildSetorFilter();
+        buildCorFilter();
+        applyFiltersAndRender();
+        document.getElementById('results').classList.add('show');
+        historyOverlay.classList.remove('show');
+        document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        btn.textContent = 'Erro';
+      }
+    });
+  });
+
+  historyBody.querySelectorAll('[data-action="delete"]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const ok = await excluirProcessamentoSupabase(id);
+      if (ok) {
+        btn.closest('.history-item').remove();
+      }
+    });
+  });
+}
+
+/* =========================================================
+   BUILD UPLOAD SLOTS
+   ========================================================= */
+const uploadGrid = document.getElementById('uploadGrid');
+SHEET_DEFS.forEach((def, idx) => {
+  const slot = document.createElement('div');
+  slot.className = 'slot';
+  slot.id = 'slot-' + def.key;
+  slot.innerHTML = `
+    <button class="slot-clear" data-key="${def.key}" title="Remover arquivo">✕</button>
+    <div class="slot-num">0${idx+1}</div>
+    <div class="slot-name">${def.name}</div>
+    <div class="slot-cols">${def.displayCols.join(' · ')}</div>
+    <div class="slot-file" id="file-${def.key}"></div>
+    <input type="file" accept="${def.ext.join(',')}" id="input-${def.key}">
+  `;
+  uploadGrid.appendChild(slot);
+
+  const inputEl = slot.querySelector('input');
+  slot.addEventListener('click', (e) => {
+    if (e.target.classList.contains('slot-clear')) return;
+    inputEl.click();
+  });
+  inputEl.addEventListener('change', (e) => {
+    if (e.target.files[0]) handleFile(def, e.target.files[0]);
+  });
+
+  slot.addEventListener('dragover', (e) => { e.preventDefault(); slot.classList.add('dragover'); });
+  slot.addEventListener('dragleave', () => slot.classList.remove('dragover'));
+  slot.addEventListener('drop', (e) => {
+    e.preventDefault();
+    slot.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(def, f);
+  });
+
+  slot.querySelector('.slot-clear').addEventListener('click', (e) => {
+    e.stopPropagation();
+    delete state.files[def.key];
+    document.getElementById('input-' + def.key).value = '';
+    document.getElementById('file-' + def.key).innerHTML = '';
+    slot.classList.remove('filled');
+    updateStatus();
+  });
+});
+
+function handleFile(def, file) {
+  const lowerName = file.name.toLowerCase();
+  const validExt = def.ext.some(ext => lowerName.endsWith(ext));
+  if (!validExt) {
+    showError(`O arquivo "${file.name}" precisa ter extensão ${def.ext.join(' ou ')} para a planilha ${def.name}.`);
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const sheetName = wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+
+      let rows;
+      if (def.headerRow && def.headerRow > 1) {
+        // planilha com linha(s) de título antes do cabeçalho real
+        // pega como matriz bruta, usa a linha headerRow (1-indexed) como cabeçalho
+        const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', blankrows: true });
+        const headerIdx = def.headerRow - 1;
+        const headers = (matrix[headerIdx] || []).map(h => String(h).trim());
+        const dataRows = matrix.slice(headerIdx + 1);
+        rows = dataRows
+          .filter(r => r.some(cell => String(cell).trim() !== '')) // remove linhas totalmente vazias
+          .map(r => {
+            const obj = {};
+            headers.forEach((h, i) => { obj[h] = r[i] !== undefined ? r[i] : ''; });
+            return obj;
+          });
+        // remove a última linha se for a linha de "Total"
+        if (def.skipFooterIfTotal && rows.length) {
+          const last = rows[rows.length - 1];
+          const firstVal = Object.values(last)[0];
+          if (String(firstVal).trim().toUpperCase().startsWith('TOTAL')) {
+            rows = rows.slice(0, -1);
+          }
+        }
+      } else {
+        rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      }
+
+      // normaliza nomes alternativos de coluna (ex: "QTD U." -> "QTD"), se definidos para esta planilha
+      if (def.altCols && rows.length) {
+        const currentHeaders = Object.keys(rows[0]);
+        Object.entries(def.altCols).forEach(([canonical, alternatives]) => {
+          if (!currentHeaders.includes(canonical)) {
+            const found = alternatives.find(alt => currentHeaders.includes(alt));
+            if (found) {
+              rows.forEach(r => { r[canonical] = r[found]; });
+            }
+          }
+        });
+      }
+
+      // valida colunas esperadas
+      const headers = rows.length ? Object.keys(rows[0]) : [];
+      const missing = def.cols.filter(c => !headers.includes(c));
+      if (missing.length) {
+        showError(`"${def.name}": colunas não encontradas no arquivo enviado: ${missing.join(', ')}.\nColunas encontradas: ${headers.join(', ')}`);
+        return;
+      }
+
+      state.files[def.key] = { file, data: rows, name: file.name };
+      clearError();
+      const slot = document.getElementById('slot-' + def.key);
+      slot.classList.add('filled');
+      document.getElementById('file-' + def.key).innerHTML =
+        `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>${file.name} (${rows.length} linhas)</span>`;
+      updateStatus();
+    } catch (err) {
+      showError(`Erro ao ler "${file.name}": ${err.message}`);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function updateStatus() {
+  const count = Object.keys(state.files).length;
+  document.getElementById('statusText').textContent = `${count} de 5 planilhas carregadas`;
+  const pill = document.getElementById('statusPill');
+  const btn = document.getElementById('processBtn');
+  const hint = document.getElementById('actionHint');
+  if (count === 5) {
+    pill.classList.add('ready');
+    btn.disabled = false;
+    hint.innerHTML = 'Tudo certo. Clique em <b>Processar planilhas</b> para gerar a conferência.';
+  } else {
+    pill.classList.remove('ready');
+    btn.disabled = true;
+    hint.innerHTML = `Envie as <b>5 planilhas</b> para liberar o processamento. Faltam ${5-count}.`;
+  }
+}
+
+function showError(msg) {
+  const box = document.getElementById('errorBox');
+  box.textContent = msg;
+  box.classList.add('show');
+}
+function clearError() {
+  document.getElementById('errorBox').classList.remove('show');
+}
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function norm(v) {
+  // normaliza string para comparação de chave/descrição: trim, sem espaços duplicados, case-insensitive
+  return String(v ?? '').trim().replace(/\s+/g, ' ').toUpperCase();
+}
+function isEmpty(v) {
+  return v === undefined || v === null || String(v).trim() === '';
+}
+function toNumber(v) {
+  if (v === undefined || v === null || v === '') return 0;
+  if (typeof v === 'number') return v;
+  // aceita formatos "1.234,56" ou "1234.56"
+  let s = String(v).trim();
+  if (/,\d{1,2}$/.test(s) && s.includes(',')) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  } else {
+    s = s.replace(/,/g, '');
+  }
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+function normCodBarras(v) {
+  // normaliza código de barras para comparação: remove espaços, maiúsculas, e zeros à esquerda
+  // (ex: "0007891000100103" e "7891000100103" devem ser tratados como o mesmo código)
+  let s = norm(v);
+  s = s.replace(/^0+(?=\d)/, ''); // remove zeros à esquerda, mas mantém "0" se for só zeros
+  return s;
+}
+function extractClassif(v) {
+  // a Classificação Principal vem no formato "PRINCIPAL > MARCAS EXCLUSIVAS > VITAMINAS EXCLUSIVAS > ..."
+  // Extraímos sempre a 2ª parte (entre o 1º e o 2º ">"), independente de quantos níveis existirem.
+  // Ex: "PRINCIPAL > MARCAS EXCLUSIVAS > VITAMINAS EXCLUSIVAS > ZAN PHARMA / ZNL" -> "MARCAS EXCLUSIVAS"
+  if (isEmpty(v)) return v;
+  const s = String(v);
+  if (!s.includes('>')) return s.trim(); // sem delimitador, devolve como está
+  const parts = s.split('>');
+  return parts[1].trim(); // sempre a 2ª parte (índice 1)
+}
+
+/* =========================================================
+   PROCESSAMENTO PRINCIPAL
+   ========================================================= */
+document.getElementById('processBtn').addEventListener('click', processAll);
+
+function processAll() {
+  clearError();
+  const spinner = document.getElementById('spinner');
+  const label = document.getElementById('processBtnLabel');
+  spinner.classList.add('show');
+  label.textContent = 'Processando...';
+  document.getElementById('processBtn').disabled = true;
+
+  setTimeout(() => {
+    try {
+      runPipeline();
+      spinner.classList.remove('show');
+      label.textContent = 'Processar planilhas';
+      document.getElementById('processBtn').disabled = false;
+    } catch (err) {
+      showError('Erro ao processar: ' + err.message);
+      spinner.classList.remove('show');
+      label.textContent = 'Processar planilhas';
+      document.getElementById('processBtn').disabled = false;
+    }
+  }, 60);
+}
+
+function runPipeline() {
+  // ---- 1. CUSTO REF: chave principal = Código de Barras (ou Etiqueta se vazio) ----
+  // guardamos também etiqueta e produto/descrição separados, para permitir busca em cascata.
+  // Código de barras é normalizado SEM zeros à esquerda (normCodBarras); etiqueta mantém comparação exata (norm).
+  let custoRef = state.files.custoRef.data.map(r => {
+    const codBarras = r['Código de Barras'];
+    const etiqueta = r['Etiqueta'];
+    return {
+      codBarras: normCodBarras(codBarras),
+      etiqueta: norm(etiqueta),
+      etiquetaOriginal: etiqueta, // texto original da etiqueta, para exibir na coluna ETIQUETA
+      produto: norm(r['Produto']),
+      produtoOriginal: r['Produto'], // mantém o texto original (não normalizado) para exibir como DESCRICAO
+      fabricante: r['Fabricante'], // CUSTO REF passou a ser a fonte de FABRICANTE
+      precoReferencial: toNumber(r['Preço Referencial'])
+    };
+  });
+
+  // ---- 2. CUSTO 2: merge por Produto (descrição) sobrepõe Preço Referencial ----
+  const custo2Map = new Map();
+  state.files.custo2.data.forEach(r => {
+    custo2Map.set(norm(r['Produto']), toNumber(r['Custo']));
+  });
+  custoRef.forEach(r => {
+    const match = custo2Map.get(r.produto);
+    if (match !== undefined) {
+      r.precoReferencial = match; // sobrescreve com CUSTO 2 quando casa a descrição
+    }
+    // se não casar, mantém o valor original de CUSTO REF
+  });
+
+  // índices de busca em cascata para CUSTO REF: cód. barras (sem zeros à esquerda) > etiqueta > produto
+  const custoByCodBarras = new Map();
+  const custoByEtiqueta = new Map();
+  const custoByProduto = new Map();
+  custoRef.forEach(r => {
+    if (!isEmpty(r.codBarras) && !custoByCodBarras.has(r.codBarras)) custoByCodBarras.set(r.codBarras, r);
+    if (!isEmpty(r.etiqueta) && !custoByEtiqueta.has(r.etiqueta)) custoByEtiqueta.set(r.etiqueta, r);
+    if (!isEmpty(r.produto) && !custoByProduto.has(r.produto)) custoByProduto.set(r.produto, r);
+  });
+
+  function buscarCusto(codBarras, etiqueta, descricao) {
+    let hit = null;
+    if (!isEmpty(codBarras) && custoByCodBarras.has(normCodBarras(codBarras))) hit = custoByCodBarras.get(normCodBarras(codBarras));
+    else if (!isEmpty(etiqueta) && custoByEtiqueta.has(norm(etiqueta))) hit = custoByEtiqueta.get(norm(etiqueta));
+    else if (!isEmpty(descricao) && custoByProduto.has(norm(descricao))) hit = custoByProduto.get(norm(descricao));
+    return hit || null; // retorna o registro completo de CUSTO REF (preço + descrição original), ou null
+  }
+
+  // ---- 3. IS_COLLECTOR: BASE da planilha final. Indexado por código (sem zeros à esquerda, pois pode
+  // ser código de barras OU etiqueta) e por descrição, para permitir a mesma busca em cascata.
+  let isCollector = state.files.isCollector.data.map(r => ({
+    setor: r['SETOR'],
+    area: toNumber(r['AREA']), // ÁREA tratada como número (inteiro ou decimal)
+    codigo: r['CODIGO'],
+    codigoNormBarras: normCodBarras(r['CODIGO']), // para casar com Código de Barras (ignora zeros à esquerda)
+    codigoNormExato: norm(r['CODIGO']),           // para casar com Etiqueta (comparação exata)
+    descricao: r['DESCRICAO'],
+    descricaoNorm: norm(r['DESCRICAO']),
+    qtd: toNumber(r['QTD'])
+  }));
+
+  // ---- 4. ALPHA7: indexado por Código de Barras (sem zeros à esquerda) > Etiqueta > Embalagem, para
+  // trazer QTD A., QTD T. e CLASSIFICAÇÃO até cada linha de IS_COLLECTOR.
+  let alpha7 = state.files.alpha7.data.map(r => ({
+    codBarrasOriginal: r['Código de Barras'],
+    etiquetaOriginal: r['Etiqueta'],
+    embalagemOriginal: r['Embalagem'],
+    codBarras: normCodBarras(r['Código de Barras']),
+    etiqueta: norm(r['Etiqueta']),
+    embalagemNorm: norm(r['Embalagem']),
+    classificacao: extractClassif(r['Classificação Principal']),
+    estoqueContado: toNumber(r['Estoque Contado']),
+    estoqueApurado: toNumber(r['Estoque Apurado']),
+    estoqueTeorico: toNumber(r['Estoque Teórico']),
+    _usado: false // marca se este item já entrou no resultado via cruzamento com IS_COLLECTOR
+  }));
+  const alphaByCodBarras = new Map();
+  const alphaByEtiqueta = new Map();
+  const alphaByEmbalagem = new Map();
+  alpha7.forEach(r => {
+    if (!isEmpty(r.codBarras) && !alphaByCodBarras.has(r.codBarras)) alphaByCodBarras.set(r.codBarras, r);
+    if (!isEmpty(r.etiqueta) && !alphaByEtiqueta.has(r.etiqueta)) alphaByEtiqueta.set(r.etiqueta, r);
+    if (!isEmpty(r.embalagemNorm) && !alphaByEmbalagem.has(r.embalagemNorm)) alphaByEmbalagem.set(r.embalagemNorm, r);
+  });
+
+  function buscarAlpha(codBarras, etiqueta, descricao) {
+    let hit = null;
+    if (!isEmpty(codBarras) && alphaByCodBarras.has(normCodBarras(codBarras))) hit = alphaByCodBarras.get(normCodBarras(codBarras));
+    else if (!isEmpty(etiqueta) && alphaByEtiqueta.has(norm(etiqueta))) hit = alphaByEtiqueta.get(norm(etiqueta));
+    else if (!isEmpty(descricao) && alphaByEmbalagem.has(norm(descricao))) hit = alphaByEmbalagem.get(norm(descricao));
+    return hit || null;
+  }
+
+  // ---- MONTAGEM FINAL: base = IS_COLLECTOR. Só entram linhas que encontram correspondência em
+  // ALPHA7 (ou seja, que têm DIFER. calculável). Quem não acha em ALPHA7 é descartado. ----
+  const result = [];
+  let notFoundInAlpha = 0;
+  let notFoundInCusto = 0;
+
+  isCollector.forEach(c => {
+    // a chave de busca em ALPHA7 é o próprio CODIGO de IS_COLLECTOR (pode ser código de barras ou etiqueta)
+    const alpha = buscarAlpha(c.codigo, c.codigo, c.descricao);
+    if (!alpha) { notFoundInAlpha++; return; } // sem correspondência em ALPHA7 -> não entra (sem DIFER.)
+    alpha._usado = true; // marca para não duplicar no loop de itens com Estoque Contado = 0
+
+    const qtdA = alpha.estoqueApurado;
+    const qtdT = alpha.estoqueTeorico;
+    const difer = qtdA - qtdT;
+
+    const custoHit = buscarCusto(c.codigo, c.codigo, c.descricao);
+    if (!custoHit) notFoundInCusto++;
+
+    const qtdU = c.qtd;
+    const custoUVal = custoHit ? custoHit.precoReferencial : 0;
+    const custoT = custoUVal * difer;
+    // DESCRICAO, FABRICANTE e ETIQUETA vêm de CUSTO REF
+    const descricao = custoHit ? custoHit.produtoOriginal : '';
+    const fabricante = custoHit ? custoHit.fabricante : '';
+    const etiqueta = custoHit ? custoHit.etiquetaOriginal : '';
+
+    result.push({
+      SETOR: c.setor,
+      AREA: c.area,
+      CODIGO: c.codigo,
+      DESCRICAO: descricao,
+      ETIQUETA: etiqueta,
+      QTD_U: qtdU,
+      QTD_A: qtdA,
+      QTD_T: qtdT,
+      DIFER: difer,
+      CUSTO_U: custoUVal,
+      CUSTO_T: custoT,
+      CLASSIF: alpha.classificacao,
+      FABRICANTE: fabricante,
+      _semCusto: !custoHit,
+      _alphaCodBarras: alpha.codBarrasOriginal,
+      _alphaEtiqueta: alpha.etiquetaOriginal
+    });
+  });
+
+  // ---- ITENS EXTRAS: ALPHA7 com Estoque Contado = 0 que ainda não entraram no resultado ----
+  // Para esses, não há correspondência em IS_COLLECTOR (ou não foi usada): SETOR e ÁREA ficam vazios,
+  // QTD U. = 0. Descrição/Etiqueta/Fabricante/Custo U. vêm de CUSTO REF; Classificação vem de ALPHA7.
+  let addedFromZeroContado = 0;
+  let notFoundInCustoZero = 0;
+
+  alpha7.forEach(a => {
+    if (a._usado) return; // já entrou via cruzamento com IS_COLLECTOR
+    if (a.estoqueContado !== 0) return; // só interessa Estoque Contado = 0
+
+    const qtdA = a.estoqueApurado;
+    const qtdT = a.estoqueTeorico;
+    const difer = qtdA - qtdT;
+
+    const custoHit = buscarCusto(a.codBarrasOriginal, a.etiquetaOriginal, a.embalagemOriginal);
+    if (!custoHit) notFoundInCustoZero++;
+
+    const custoUVal = custoHit ? custoHit.precoReferencial : 0;
+    const custoT = custoUVal * difer;
+    const descricao = custoHit ? custoHit.produtoOriginal : '';
+    const fabricante = custoHit ? custoHit.fabricante : '';
+    const etiqueta = custoHit ? custoHit.etiquetaOriginal : a.etiquetaOriginal;
+
+    result.push({
+      SETOR: '',
+      AREA: null,
+      CODIGO: a.codBarrasOriginal || a.etiquetaOriginal || '',
+      DESCRICAO: descricao,
+      ETIQUETA: etiqueta,
+      QTD_U: 0,
+      QTD_A: qtdA,
+      QTD_T: qtdT,
+      DIFER: difer,
+      CUSTO_U: custoUVal,
+      CUSTO_T: custoT,
+      CLASSIF: a.classificacao,
+      FABRICANTE: fabricante,
+      _semCusto: !custoHit,
+      _alphaCodBarras: a.codBarrasOriginal,
+      _alphaEtiqueta: a.etiquetaOriginal
+    });
+    addedFromZeroContado++;
+  });
+
+  // ---- ULT_INV: usada apenas para colorir a planilha final, sem alterar nenhum valor calculado.
+  // Indexada por Cód. Barras (sem zeros à esquerda) e por Etiqueta, igual ao resto do app.
+  let ultInv = state.files.ultInv.data.map(r => ({
+    codBarras: normCodBarras(r['Cód. Barras']),
+    etiqueta: norm(r['Etiqueta']),
+    diferenca: toNumber(r['Diferença'])
+  }));
+  const ultInvByCodBarras = new Map();
+  const ultInvByEtiqueta = new Map();
+  ultInv.forEach(r => {
+    if (!isEmpty(r.codBarras) && !ultInvByCodBarras.has(r.codBarras)) ultInvByCodBarras.set(r.codBarras, r);
+    if (!isEmpty(r.etiqueta) && !ultInvByEtiqueta.has(r.etiqueta)) ultInvByEtiqueta.set(r.etiqueta, r);
+  });
+
+  function buscarUltInv(codBarras, etiqueta) {
+    let hit = null;
+    if (!isEmpty(codBarras) && ultInvByCodBarras.has(normCodBarras(codBarras))) hit = ultInvByCodBarras.get(normCodBarras(codBarras));
+    else if (!isEmpty(etiqueta) && ultInvByEtiqueta.has(norm(etiqueta))) hit = ultInvByEtiqueta.get(norm(etiqueta));
+    return hit || null;
+  }
+
+  // aplica a cor em cada linha, comparando a Diferença de ALPHA7 (DIFER) com a Diferença de ULT_INV
+  let countRed = 0, countYellow = 0;
+  result.forEach(r => {
+    const ult = buscarUltInv(r._alphaCodBarras, r._alphaEtiqueta);
+    if (!ult) { r.COR = ''; return; } // sem correspondência em ULT_INV -> sem cor
+
+    const soma = r.DIFER + ult.diferenca;
+    const sinaisOpostos = (r.DIFER > 0 && ult.diferenca < 0) || (r.DIFER < 0 && ult.diferenca > 0);
+
+    if (soma === 0) {
+      r.COR = 'vermelho';
+      countRed++;
+    } else if (soma !== 0 && soma >= -5 && soma <= 5 && sinaisOpostos) {
+      r.COR = 'amarelo';
+      countYellow++;
+    } else {
+      r.COR = '';
+    }
+  });
+
+  state.result = result;
+
+  // resumo de avisos
+  let warn = '';
+  if (notFoundInAlpha) {
+    warn += `${notFoundInAlpha} item(ns) de IS_COLLECTOR não encontraram correspondência em ALPHA7 (sem Difer. calculável) e não entraram na planilha final.\n`;
+  }
+  if (notFoundInCusto || notFoundInCustoZero) {
+    warn += `Aviso: ${notFoundInCusto + notFoundInCustoZero} item(ns) não encontraram correspondência em CUSTO REF (busca por código de barras, etiqueta e descrição) — Custo U., Descrição, Fabricante e Etiqueta ficaram em branco/0 para esses casos.\n`;
+  }
+  if (addedFromZeroContado) {
+    warn += `${addedFromZeroContado} item(ns) extras da ALPHA7 com Estoque Contado = 0 foram adicionados (Setor e Área em branco, QTD U. = 0).\n`;
+  }
+  if (countRed || countYellow) {
+    warn += `Marcação ULT_INV: ${countRed} item(ns) em vermelho (soma das diferenças = 0) e ${countYellow} item(ns) em amarelo (soma entre -5 e 5, sinais opostos).`;
+  }
+  if (warn) showWarn(warn); else clearError();
+
+  buildClassifFilter();
+  buildSetorFilter();
+  buildCorFilter();
+  applyFiltersAndRender();
+  document.getElementById('results').classList.add('show');
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  salvarHistoricoSupabase(result, { countRed, countYellow, notFoundInAlpha, notFoundInCusto: notFoundInCusto + notFoundInCustoZero, addedFromZeroContado });
+}
+
+function showWarn(msg) {
+  const box = document.getElementById('errorBox');
+  box.style.background = 'var(--amber-dim)';
+  box.style.borderColor = 'var(--amber)';
+  box.style.color = '#ffe2b0';
+  box.textContent = msg;
+  box.classList.add('show');
+}
+
+/* =========================================================
+   FILTROS / TABELA
+   ========================================================= */
+const COLUMN_DEFS = [
+  { key:'SETOR', label:'Setor', type:'text' },
+  { key:'AREA', label:'Área', type:'num' },
+  { key:'CODIGO', label:'Código', type:'text' },
+  { key:'DESCRICAO', label:'Descrição', type:'text' },
+  { key:'ETIQUETA', label:'Etiqueta', type:'text' },
+  { key:'QTD_U', label:'Qtd U.', type:'num' },
+  { key:'QTD_A', label:'Qtd A.', type:'num' },
+  { key:'QTD_T', label:'Qtd T.', type:'num' },
+  { key:'DIFER', label:'Difer.', type:'num' },
+  { key:'CUSTO_U', label:'Custo U.', type:'currency' },
+  { key:'CUSTO_T', label:'Custo T.', type:'currency' },
+  { key:'CLASSIF', label:'Classif.', type:'badge' },
+  { key:'FABRICANTE', label:'Fabricante', type:'text' }
+];
+
+/* =========================================================
+   MULTI-SELECT DROPDOWN (Setor / Classificação)
+   ========================================================= */
+const multiselectState = {
+  setorFilter: new Set(),   // valores selecionados (vazio = "todos")
+  classifFilter: new Set(),
+  corFilter: new Set()
+};
+
+function buildMultiselect(id, values, labelSingular, labelsMap) {
+  const panel = document.getElementById(id + 'Panel');
+  const selected = multiselectState[id];
+  const displayLabel = (v) => (labelsMap && labelsMap[v] !== undefined) ? labelsMap[v] : v;
+  // remove da seleção valores que não existem mais nos dados atuais
+  [...selected].forEach(v => { if (!values.includes(v)) selected.delete(v); });
+
+  panel.innerHTML = `
+    <input type="text" class="multiselect-search" placeholder="Buscar ${labelSingular.toLowerCase()}..." data-for="${id}">
+    <div class="multiselect-actions">
+      <button type="button" data-action="all" data-for="${id}">Marcar todos</button>
+      <button type="button" data-action="none" data-for="${id}">Limpar</button>
+    </div>
+    <div class="multiselect-options" id="${id}OptionsList">
+      ${values.map(v => `
+        <label class="multiselect-option ${selected.has(v) ? 'checked' : ''}" data-value="${esc(v)}">
+          <input type="checkbox" value="${esc(v)}" ${selected.has(v) ? 'checked' : ''}>
+          <span>${esc(displayLabel(v))}</span>
+        </label>
+      `).join('') || `<div class="multiselect-empty">Nenhum valor encontrado</div>`}
+    </div>
+  `;
+
+  updateMultiselectLabel(id, labelSingular, labelsMap);
+
+  // checkbox toggle
+  panel.querySelectorAll('.multiselect-option').forEach(opt => {
+    opt.addEventListener('change', (e) => {
+      const val = opt.dataset.value;
+      if (e.target.checked) selected.add(val); else selected.delete(val);
+      opt.classList.toggle('checked', e.target.checked);
+      updateMultiselectLabel(id, labelSingular, labelsMap);
+      markPending();
+    });
+  });
+
+  // marcar todos / limpar
+  panel.querySelector('[data-action="all"]').addEventListener('click', () => {
+    values.forEach(v => selected.add(v));
+    buildMultiselect(id, values, labelSingular, labelsMap);
+    markPending();
+  });
+  panel.querySelector('[data-action="none"]').addEventListener('click', () => {
+    selected.clear();
+    buildMultiselect(id, values, labelSingular, labelsMap);
+    markPending();
+  });
+
+  // busca dentro do painel
+  panel.querySelector('.multiselect-search').addEventListener('input', (e) => {
+    const term = norm(e.target.value);
+    panel.querySelectorAll('.multiselect-option').forEach(opt => {
+      const match = norm(displayLabel(opt.dataset.value)).includes(term);
+      opt.style.display = match ? 'flex' : 'none';
+    });
+  });
+}
+
+function updateMultiselectLabel(id, labelSingular, labelsMap) {
+  const selected = multiselectState[id];
+  const btn = document.querySelector(`.multiselect-btn[data-target="${id}"] .multiselect-label`);
+  if (!btn) return;
+  const displayLabel = (v) => (labelsMap && labelsMap[v] !== undefined) ? labelsMap[v] : v;
+  if (selected.size === 0) btn.textContent = `Todos`;
+  else if (selected.size === 1) btn.textContent = displayLabel([...selected][0]);
+  else btn.textContent = `${selected.size} ${labelSingular.toLowerCase()}s selecionados`;
+}
+
+// abre/fecha o painel ao clicar no botão; fecha ao clicar fora
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.multiselect-btn');
+  if (btn) {
+    const id = btn.dataset.target;
+    const el = document.getElementById(id);
+    const wasOpen = el.classList.contains('open');
+    document.querySelectorAll('.multiselect.open').forEach(m => m.classList.remove('open'));
+    if (!wasOpen) el.classList.add('open');
+    return;
+  }
+  if (!e.target.closest('.multiselect-panel')) {
+    document.querySelectorAll('.multiselect.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+function buildClassifFilter() {
+  const set = new Set(state.result.map(r => r.CLASSIF).filter(v => !isEmpty(v)));
+  buildMultiselect('classifFilter', [...set].sort(), 'Classificação');
+}
+
+function buildSetorFilter() {
+  const set = new Set(state.result.map(r => r.SETOR).filter(v => !isEmpty(v)));
+  buildMultiselect('setorFilter', [...set].sort(), 'Setor');
+}
+
+function buildCorFilter() {
+  // opções fixas: vermelho, amarelo e sem cor (valor interno '' = sem cor)
+  const values = ['vermelho', 'amarelo', ''];
+  const labelsMap = { 'vermelho': 'Vermelho', 'amarelo': 'Amarelo', '': 'Sem cor' };
+  buildMultiselect('corFilter', values, 'Cor', labelsMap);
+}
+
+function checaCondicaoValor(v, cond, min, max) {
+  if (cond === 'any') return true;
+  const eqVal = min;
+  if (cond === 'gt') return v > min;
+  if (cond === 'gte') return v >= min;
+  if (cond === 'lt') return v < min;
+  if (cond === 'lte') return v <= min;
+  if (cond === 'between') {
+    if (isNaN(min) || isNaN(max)) return true;
+    return v >= Math.min(min,max) && v <= Math.max(min,max);
+  }
+  if (cond === 'eq') return v === eqVal;
+  if (cond === 'neq') return v !== eqVal;
+  return true;
+}
+
+function applyFiltersAndRender() {
+  const search = norm(document.getElementById('searchInput').value);
+  const classifSet = multiselectState.classifFilter;
+  const setorSet = multiselectState.setorFilter;
+  const corSet = multiselectState.corFilter;
+  const valueCol = document.getElementById('valueColumn').value;
+  const cond = document.getElementById('valueCondition').value;
+  const min = parseFloat(document.getElementById('valueMin').value);
+  const max = parseFloat(document.getElementById('valueMax').value);
+  const valueCol2 = document.getElementById('valueColumn2').value;
+  const cond2 = document.getElementById('valueCondition2').value;
+  const min2 = parseFloat(document.getElementById('valueMin2').value);
+  const max2 = parseFloat(document.getElementById('valueMax2').value);
+
+  let rows = state.result.filter(r => {
+    if (classifSet.size && !classifSet.has(r.CLASSIF)) return false;
+    if (setorSet.size && !setorSet.has(r.SETOR)) return false;
+    if (corSet.size && !corSet.has(r.COR)) return false;
+    if (search) {
+      const haystack = norm(`${r.SETOR} ${r.AREA} ${r.CODIGO} ${r.DESCRICAO} ${r.ETIQUETA} ${r.CLASSIF} ${r.FABRICANTE}`);
+      if (!haystack.includes(search)) return false;
+    }
+    // os dois filtros de valor se combinam com E (AND): a linha só passa se atender AMBOS
+    if (!checaCondicaoValor(r[valueCol], cond, min, max)) return false;
+    if (!checaCondicaoValor(r[valueCol2], cond2, min2, max2)) return false;
+    return true;
+  });
+
+  if (state.sortKey) {
+    rows = rows.slice().sort((a, b) => {
+      const av = a[state.sortKey], bv = b[state.sortKey];
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * state.sortDir;
+      return String(av).localeCompare(String(bv)) * state.sortDir;
+    });
+  }
+
+  state.filtered = rows;
+  renderTable();
+  renderSummary();
+}
+
+function renderSummary() {
+  const rows = state.filtered;
+  const totalDifer = rows.reduce((s, r) => s + r.DIFER, 0);
+  const totalCustoT = rows.reduce((s, r) => s + r.CUSTO_T, 0);
+  const positivos = rows.filter(r => r.CUSTO_T > 0).length;
+  const negativos = rows.filter(r => r.CUSTO_T < 0).length;
+
+  document.getElementById('summaryRow').innerHTML = `
+    <div class="summary-card">
+      <div class="label">Itens filtrados</div>
+      <div class="value">${rows.length}</div>
+    </div>
+    <div class="summary-card amber">
+      <div class="label">Soma Difer.</div>
+      <div class="value">${totalDifer.toLocaleString('pt-BR', {maximumFractionDigits:2})}</div>
+    </div>
+    <div class="summary-card ${totalCustoT < 0 ? 'red' : 'teal'}">
+      <div class="label">Soma Custo T.</div>
+      <div class="value">${fmtCurrency(totalCustoT)}</div>
+    </div>
+    <div class="summary-card red">
+      <div class="label">Itens c/ custo negativo</div>
+      <div class="value">${negativos}</div>
+    </div>
+    <div class="summary-card teal">
+      <div class="label">Itens c/ custo positivo</div>
+      <div class="value">${positivos}</div>
+    </div>
+  `;
+}
+
+function fmtCurrency(v) {
+  return v.toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+}
+
+function renderTable() {
+  const headRow = document.getElementById('tableHeadRow');
+  headRow.innerHTML = COLUMN_DEFS.map(c => `
+    <th data-key="${c.key}" class="${state.sortKey === c.key ? 'sorted' : ''}">
+      ${c.label}<span class="arrow">${state.sortKey === c.key ? (state.sortDir === 1 ? '▲' : '▼') : '↕'}</span>
+    </th>
+  `).join('');
+  headRow.querySelectorAll('th').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      if (state.sortKey === key) state.sortDir *= -1;
+      else { state.sortKey = key; state.sortDir = 1; }
+      applyFiltersAndRender();
+    });
+  });
+
+  const body = document.getElementById('tableBody');
+  if (!state.filtered.length) {
+    body.innerHTML = `<tr><td colspan="${COLUMN_DEFS.length}"><div class="empty-state">Nenhum item encontrado com os filtros atuais.</div></td></tr>`;
+  } else {
+    body.innerHTML = state.filtered.map(r => `
+      <tr class="${r.COR === 'vermelho' ? 'row-red' : (r.COR === 'amarelo' ? 'row-yellow' : '')}">
+        <td>${esc(r.SETOR)}</td>
+        <td class="num">${r.AREA !== null && r.AREA !== undefined ? r.AREA.toLocaleString('pt-BR') : ''}</td>
+        <td>${esc(r.CODIGO)}</td>
+        <td>${esc(r.DESCRICAO)}</td>
+        <td>${esc(r.ETIQUETA)}</td>
+        <td class="num">${r.QTD_U.toLocaleString('pt-BR')}</td>
+        <td class="num">${r.QTD_A.toLocaleString('pt-BR')}</td>
+        <td class="num">${r.QTD_T.toLocaleString('pt-BR')}</td>
+        <td class="num ${r.DIFER < 0 ? 'neg' : (r.DIFER > 0 ? 'pos' : '')}">${r.DIFER.toLocaleString('pt-BR')}</td>
+        <td class="num">${fmtCurrency(r.CUSTO_U)}</td>
+        <td class="num ${r.CUSTO_T < 0 ? 'neg' : (r.CUSTO_T > 0 ? 'pos' : '')}">${fmtCurrency(r.CUSTO_T)}</td>
+        <td><span class="classif-badge">${esc(r.CLASSIF)}</span></td>
+        <td>${esc(r.FABRICANTE)}</td>
+      </tr>
+    `).join('');
+  }
+  document.getElementById('rowCount').textContent = `Exibindo ${state.filtered.length} de ${state.result.length} itens`;
+}
+
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* filtros: só aplicam ao clicar em "Aplicar filtros" (ou Enter no campo de busca) */
+const applyBtn = document.getElementById('applyFiltersBtn');
+
+function markPending() {
+  applyBtn.classList.add('pending');
+}
+
+['searchInput','valueMin','valueMax','valueMin2','valueMax2'].forEach(id => document.getElementById(id).addEventListener('input', markPending));
+['valueColumn','valueCondition','valueColumn2','valueCondition2'].forEach(id => document.getElementById(id).addEventListener('change', markPending));
+
+document.getElementById('searchInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); applyFiltersAndRender(); applyBtn.classList.remove('pending'); }
+});
+['valueMin','valueMax','valueMin2','valueMax2'].forEach(id => document.getElementById(id).addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); applyFiltersAndRender(); applyBtn.classList.remove('pending'); }
+}));
+
+applyBtn.addEventListener('click', () => {
+  applyFiltersAndRender();
+  applyBtn.classList.remove('pending');
+});
+
+function configurarToggleCondicao(conditionId, minId, maxId, dashId) {
+  document.getElementById(conditionId).addEventListener('change', (e) => {
+    const cond = e.target.value;
+    const max = document.getElementById(maxId);
+    const dash = document.getElementById(dashId);
+    if (cond === 'between') { max.style.display='inline-block'; dash.style.display='inline-block'; }
+    else { max.style.display = 'none'; dash.style.display='none'; }
+    document.getElementById(minId).placeholder = (cond === 'eq' || cond === 'neq') ? 'valor' : 'mín';
+  });
+  document.getElementById(maxId).style.display = 'none';
+  document.getElementById(dashId).style.display = 'none';
+}
+configurarToggleCondicao('valueCondition', 'valueMin', 'valueMax', 'rangeDash');
+configurarToggleCondicao('valueCondition2', 'valueMin2', 'valueMax2', 'rangeDash2');
+
+document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+  document.getElementById('searchInput').value = '';
+  multiselectState.classifFilter.clear();
+  multiselectState.setorFilter.clear();
+  multiselectState.corFilter.clear();
+  buildClassifFilter();
+  buildSetorFilter();
+  buildCorFilter();
+  document.getElementById('valueColumn').value = 'QTD_A';
+  document.getElementById('valueCondition').value = 'any';
+  document.getElementById('valueMin').value = '';
+  document.getElementById('valueMax').value = '';
+  document.getElementById('valueMax').style.display = 'none';
+  document.getElementById('rangeDash').style.display = 'none';
+  document.getElementById('valueColumn2').value = 'QTD_A';
+  document.getElementById('valueCondition2').value = 'any';
+  document.getElementById('valueMin2').value = '';
+  document.getElementById('valueMax2').value = '';
+  document.getElementById('valueMax2').style.display = 'none';
+  document.getElementById('rangeDash2').style.display = 'none';
+  applyBtn.classList.remove('pending');
+  applyFiltersAndRender();
+});
+
+/* =========================================================
+   EXPORTAÇÃO
+   ========================================================= */
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const data = state.filtered.map(r => ({
+    'SETOR': r.SETOR,
+    'AREA': r.AREA,
+    'CODIGO': r.CODIGO,
+    'DESCRICAO': r.DESCRICAO,
+    'ETIQUETA': r.ETIQUETA,
+    'QTD U.': r.QTD_U,
+    'QTD A.': r.QTD_A,
+    'QTD T.': r.QTD_T,
+    'DIFER.': r.DIFER,
+    'CUSTO U.': r.CUSTO_U,
+    'CUSTO T.': r.CUSTO_T,
+    'CLASSIF.': r.CLASSIF,
+    'FABRICANTE': r.FABRICANTE,
+    'COR': r.COR === 'vermelho' ? 'VERMELHO' : (r.COR === 'amarelo' ? 'AMARELO' : '')
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Conferência');
+  const dateStr = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `conferencia_inventario_${dateStr}.xlsx`);
+});
+
+document.getElementById('printBtn').addEventListener('click', printResultTable);
+
+function printResultTable() {
+  if (!state.filtered.length) {
+    showError('Não há itens para imprimir com os filtros atuais.');
+    return;
+  }
+
+  const rows = state.filtered;
+  const dateStr = new Date().toLocaleDateString('pt-BR');
+
+  const tableRows = rows.map(r => `
+    <tr class="${r.COR === 'vermelho' ? 'row-red' : (r.COR === 'amarelo' ? 'row-yellow' : '')}">
+      <td>${esc(r.SETOR)}</td>
+      <td class="num">${r.AREA !== null && r.AREA !== undefined ? r.AREA : ''}</td>
+      <td>${esc(r.CODIGO)}</td>
+      <td>${esc(r.DESCRICAO)}</td>
+      <td>${esc(r.ETIQUETA)}</td>
+      <td class="num">${r.QTD_U.toLocaleString('pt-BR')}</td>
+      <td>${esc(String(r.FABRICANTE ?? '').slice(0, 7))}</td>
+    </tr>
+  `).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Conferência de Inventário — ${dateStr}</title>
+<style>
+  @page { size: A4 landscape; margin: 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; color:#111; margin:0; padding:0 16px; }
+  h1 { font-size:16px; margin:16px 0 2px; }
+  .meta { font-size:11px; color:#555; margin-bottom:14px; }
+  table { width:100%; border-collapse:collapse; font-size:10.5px; }
+  thead th {
+    background:#eee; text-align:left; padding:6px 8px; border:1px solid #ccc;
+    text-transform:uppercase; font-size:9.5px; letter-spacing:0.03em;
+  }
+  tbody td { padding:5px 8px; border:1px solid #ddd; }
+  td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  tr { page-break-inside: avoid; }
+  thead { display: table-header-group; }
+  tr.row-red { background:#fbdcd8; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  tr.row-yellow { background:#fbecc4; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+</style>
+</head>
+<body>
+  <h1>Conferência de Inventário</h1>
+  <div class="meta">Gerado em ${dateStr} · ${rows.length} item(ns)</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Setor</th><th>Área</th><th>Código de Barras</th><th>Descrição</th><th>Etiqueta</th>
+        <th>Qtd U.</th><th>Fabricante</th>
+      </tr>
+    </thead>
+    <tbody>${tableRows}</tbody>
+  </table>
+  <script>
+    window.onload = function() {
+      window.print();
+    };
+  <\/script>
+</body>
+</html>`;
+
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    showError('Não foi possível abrir a janela de impressão. Verifique se o navegador está bloqueando pop-ups para esta página e permita pop-ups para imprimir.');
+    return;
+  }
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
+}
+
+updateStatus();
+</script>
+</body>
+</html>
