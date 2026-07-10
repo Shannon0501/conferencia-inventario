@@ -445,7 +445,6 @@ table{
   font-size:13px;
   font-family:var(--mono);
   min-width:1250px;
-  table-layout:fixed;
 }
 thead th{
   position:sticky;
@@ -461,28 +460,14 @@ thead th{
   white-space:nowrap;
   cursor:pointer;
   user-select:none;
-  overflow:hidden;
 }
 thead th:hover{color:var(--text);}
 thead th .arrow{opacity:0.4; margin-left:4px;}
 thead th.sorted .arrow{opacity:1; color:var(--amber);}
-.col-resizer{
-  position:absolute;
-  top:0;
-  right:0;
-  width:8px;
-  height:100%;
-  cursor:col-resize;
-  user-select:none;
-  touch-action:none;
-}
-.col-resizer:hover{background:rgba(232,162,61,0.28);}
 tbody td{
   padding:9px 12px;
   border-bottom:1px solid var(--line-soft);
   white-space:nowrap;
-  overflow:hidden;
-  text-overflow:clip;
 }
 tbody tr:hover{background:rgba(255,255,255,0.025);}
 tbody tr.row-red{background:rgba(226,96,79,0.16);}
@@ -495,10 +480,6 @@ td.neg{color:var(--red);}
 td.pos{color:var(--teal);}
 .classif-badge{
   display:inline-block;
-  max-width:100%;
-  overflow:hidden;
-  text-overflow:clip;
-  white-space:nowrap;
   padding:2px 8px;
   border-radius:4px;
   font-size:11px;
@@ -557,8 +538,8 @@ td.pos{color:var(--teal);}
     print-color-adjust:exact;
   }
   tbody td{color:#000 !important; border-color:#ccc !important;}
-  tr.row-red{background:#f4b8ae !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
-  tr.row-yellow{background:#f5d67d !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  tr.row-red{background:#fbdcd8 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  tr.row-yellow{background:#fbecc4 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
   .classif-badge{background:#eee !important; color:#000 !important; border:1px solid #ccc;}
   td.neg{color:#b3261e !important;}
   td.pos{color:#0f6b5c !important;}
@@ -922,18 +903,18 @@ td.pos{color:var(--teal);}
         <table id="resultTableA7">
           <thead>
             <tr id="tableHeadRowA7">
-              <th data-col-a7="COD_BARRAS" data-width="155">Código de Barras <span class="arrow">↕</span></th>
-              <th data-col-a7="EMBALAGEM" data-width="210">Embalagem <span class="arrow">↕</span></th>
-              <th data-col-a7="ETIQUETA" data-width="130">Etiqueta <span class="arrow">↕</span></th>
-              <th data-width="85">Qtd Est</th>
-              <th data-width="85">Qtd Loja</th>
-              <th data-col-a7="EST_AP" data-width="90">Est. Ap. <span class="arrow">↕</span></th>
-              <th data-col-a7="EST_TE" data-width="90">Est. Te. <span class="arrow">↕</span></th>
-              <th data-col-a7="DIFERENCA" data-width="105">Diferença <span class="arrow">↕</span></th>
-              <th data-col-a7="CUSTO_U" data-width="115">Custo U. <span class="arrow">↕</span></th>
-              <th data-col-a7="CUSTO_T" data-width="115">Custo T. <span class="arrow">↕</span></th>
-              <th data-col-a7="FABRICANTE" data-width="135">Fabricante <span class="arrow">↕</span></th>
-              <th data-col-a7="CLASSIF" data-width="140">Classificação <span class="arrow">↕</span></th>
+              <th data-col-a7="COD_BARRAS">Código de Barras <span class="arrow">↕</span></th>
+              <th data-col-a7="EMBALAGEM">Embalagem <span class="arrow">↕</span></th>
+              <th data-col-a7="ETIQUETA">Etiqueta <span class="arrow">↕</span></th>
+              <th>Qtd Est</th>
+              <th>Qtd Loja</th>
+              <th data-col-a7="EST_AP">Est. Ap. <span class="arrow">↕</span></th>
+              <th data-col-a7="EST_TE">Est. Te. <span class="arrow">↕</span></th>
+              <th data-col-a7="DIFERENCA">Diferença <span class="arrow">↕</span></th>
+              <th data-col-a7="CUSTO_U">Custo U. <span class="arrow">↕</span></th>
+              <th data-col-a7="CUSTO_T">Custo T. <span class="arrow">↕</span></th>
+              <th data-col-a7="FABRICANTE">Fabricante <span class="arrow">↕</span></th>
+              <th data-col-a7="CLASSIF">Classificação <span class="arrow">↕</span></th>
             </tr>
           </thead>
           <tbody id="tableBodyA7"></tbody>
@@ -1672,19 +1653,19 @@ function showWarn(msg) {
    FILTROS / TABELA
    ========================================================= */
 const COLUMN_DEFS = [
-  { key:'SETOR', label:'Setor', type:'text', width:90 },
-  { key:'AREA', label:'Área', type:'num', width:80 },
-  { key:'CODIGO', label:'Código', type:'text', width:140 },
-  { key:'DESCRICAO', label:'Descrição', type:'text', width:260 },
-  { key:'ETIQUETA', label:'Etiqueta', type:'text', width:130 },
-  { key:'QTD_U', label:'Qtd U.', type:'num', width:85 },
-  { key:'QTD_A', label:'Qtd A.', type:'num', width:85 },
-  { key:'QTD_T', label:'Qtd T.', type:'num', width:85 },
-  { key:'DIFER', label:'Difer.', type:'num', width:85 },
-  { key:'CUSTO_U', label:'Custo U.', type:'currency', width:120 },
-  { key:'CUSTO_T', label:'Custo T.', type:'currency', width:120 },
-  { key:'CLASSIF', label:'Classif.', type:'badge', width:110 },
-  { key:'FABRICANTE', label:'Fabricante', type:'text', width:130 }
+  { key:'SETOR', label:'Setor', type:'text' },
+  { key:'AREA', label:'Área', type:'num' },
+  { key:'CODIGO', label:'Código', type:'text' },
+  { key:'DESCRICAO', label:'Descrição', type:'text' },
+  { key:'ETIQUETA', label:'Etiqueta', type:'text' },
+  { key:'QTD_U', label:'Qtd U.', type:'num' },
+  { key:'QTD_A', label:'Qtd A.', type:'num' },
+  { key:'QTD_T', label:'Qtd T.', type:'num' },
+  { key:'DIFER', label:'Difer.', type:'num' },
+  { key:'CUSTO_U', label:'Custo U.', type:'currency' },
+  { key:'CUSTO_T', label:'Custo T.', type:'currency' },
+  { key:'CLASSIF', label:'Classif.', type:'badge' },
+  { key:'FABRICANTE', label:'Fabricante', type:'text' }
 ];
 
 /* =========================================================
@@ -1857,8 +1838,8 @@ function applyFiltersAndRender() {
 
 function renderSummary() {
   const rows = state.filtered;
-  const somaCustoTMenorZero = rows.reduce((s, r) => r.CUSTO_T < 0 ? s + r.CUSTO_T : s, 0);
-  const somaCustoTMaiorZero = rows.reduce((s, r) => r.CUSTO_T > 0 ? s + r.CUSTO_T : s, 0);
+  const totalDifer = rows.reduce((s, r) => s + r.DIFER, 0);
+  const totalCustoT = rows.reduce((s, r) => s + r.CUSTO_T, 0);
   const positivos = rows.filter(r => r.CUSTO_T > 0).length;
   const negativos = rows.filter(r => r.CUSTO_T < 0).length;
 
@@ -1867,13 +1848,13 @@ function renderSummary() {
       <div class="label">Itens filtrados</div>
       <div class="value">${rows.length}</div>
     </div>
-    <div class="summary-card red">
-      <div class="label">Soma Custo T. menor que 0</div>
-      <div class="value">${fmtCurrency(somaCustoTMenorZero)}</div>
+    <div class="summary-card amber">
+      <div class="label">Soma Difer.</div>
+      <div class="value">${totalDifer.toLocaleString('pt-BR', {maximumFractionDigits:2})}</div>
     </div>
-    <div class="summary-card teal">
-      <div class="label">Soma Custo T. maior que 0</div>
-      <div class="value">${fmtCurrency(somaCustoTMaiorZero)}</div>
+    <div class="summary-card ${totalCustoT < 0 ? 'red' : 'teal'}">
+      <div class="label">Soma Custo T.</div>
+      <div class="value">${fmtCurrency(totalCustoT)}</div>
     </div>
     <div class="summary-card red">
       <div class="label">Itens c/ custo negativo</div>
@@ -1893,8 +1874,8 @@ function fmtCurrency(v) {
 function renderTable() {
   const headRow = document.getElementById('tableHeadRow');
   headRow.innerHTML = COLUMN_DEFS.map(c => `
-    <th data-key="${c.key}" data-width="${c.width}" class="${state.sortKey === c.key ? 'sorted' : ''}">
-      ${c.label}<span class="arrow">${state.sortKey === c.key ? (state.sortDir === 1 ? '▲' : '▼') : '↕'}</span><span class="col-resizer"></span>
+    <th data-key="${c.key}" class="${state.sortKey === c.key ? 'sorted' : ''}">
+      ${c.label}<span class="arrow">${state.sortKey === c.key ? (state.sortDir === 1 ? '▲' : '▼') : '↕'}</span>
     </th>
   `).join('');
   headRow.querySelectorAll('th').forEach(th => {
@@ -1905,7 +1886,6 @@ function renderTable() {
       applyFiltersAndRender();
     });
   });
-  enableColumnResize(document.getElementById('resultTable'));
 
   const body = document.getElementById('tableBody');
   if (!state.filtered.length) {
@@ -1934,59 +1914,6 @@ function renderTable() {
 
 function esc(v) {
   return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-
-function enableColumnResize(table) {
-  if (!table) return;
-  const headers = [...table.querySelectorAll('thead th')];
-  let colgroup = table.querySelector('colgroup');
-  if (!colgroup || colgroup.children.length !== headers.length) {
-    if (colgroup) colgroup.remove();
-    colgroup = document.createElement('colgroup');
-    headers.forEach(th => {
-      const col = document.createElement('col');
-      const width = Number(th.dataset.width) || Math.round(th.getBoundingClientRect().width) || 100;
-      col.style.width = `${width}px`;
-      colgroup.appendChild(col);
-    });
-    table.insertBefore(colgroup, table.firstElementChild);
-  }
-  const syncTableWidth = () => {
-    const total = [...colgroup.children].reduce((sum, col) => sum + (parseFloat(col.style.width) || 0), 0);
-    table.style.width = `${total}px`;
-    table.style.minWidth = `${total}px`;
-  };
-  syncTableWidth();
-
-  headers.forEach((th, index) => {
-    if (!th.querySelector('.col-resizer')) {
-      th.insertAdjacentHTML('beforeend', '<span class="col-resizer"></span>');
-    }
-    if (th.dataset.resizeReady === '1') return;
-    th.dataset.resizeReady = '1';
-    const resizer = th.querySelector('.col-resizer');
-    resizer.addEventListener('click', e => e.stopPropagation());
-    resizer.addEventListener('pointerdown', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      const startX = e.clientX;
-      const col = colgroup.children[index];
-      const startWidth = parseFloat(col.style.width) || th.offsetWidth;
-      th.classList.add('resizing');
-      const onMove = ev => {
-        const nextWidth = Math.max(24, startWidth + ev.clientX - startX);
-        col.style.width = `${nextWidth}px`;
-        syncTableWidth();
-      };
-      const onUp = () => {
-        th.classList.remove('resizing');
-        document.removeEventListener('pointermove', onMove);
-        document.removeEventListener('pointerup', onUp);
-      };
-      document.addEventListener('pointermove', onMove);
-      document.addEventListener('pointerup', onUp, { once:true });
-    });
-  });
 }
 
 /* filtros: só aplicam ao clicar em "Aplicar filtros" (ou Enter no campo de busca) */
@@ -2093,13 +2020,6 @@ function printResultTable() {
     if (r.COR === 'vermelho') cls = 'row-red';
     else if (r.COR === 'amarelo') cls = 'row-yellow';
     else cls = (i % 2 === 0) ? 'row-even' : 'row-odd'; // listras alternadas só onde não há cor de alerta
-    if (r.QTD_U === 0) {
-      return `
-    <tr class="${cls}">
-      <td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td>
-    </tr>
-  `;
-    }
     return `
     <tr class="${cls}">
       <td>${esc(r.SETOR)}</td>
@@ -2133,9 +2053,9 @@ function printResultTable() {
   td.num { text-align:right; font-variant-numeric:tabular-nums; }
   tr { page-break-inside: avoid; }
   thead { display: table-header-group; }
-  tr.row-red { background:#f4b8ae; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  tr.row-yellow { background:#f5d67d; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  tr.row-even { background:#dfe5eb; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  tr.row-red { background:#fbdcd8; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  tr.row-yellow { background:#fbecc4; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  tr.row-even { background:#f4f5f6; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   tr.row-odd { background:#ffffff; }
 </style>
 </head>
@@ -2268,17 +2188,16 @@ function applyFiltersA7AndRender() {
 
 function renderSummaryA7() {
   const rows = stateA7.filtered;
-  const somaCustoTMenorZero = rows.reduce((s, r) => r.CUSTO_T < 0 ? s + r.CUSTO_T : s, 0);
-  const somaCustoTMaiorZero = rows.reduce((s, r) => r.CUSTO_T > 0 ? s + r.CUSTO_T : s, 0);
+  const totD = rows.reduce((s,r) => s+r.DIFERENCA, 0);
+  const totC = rows.reduce((s,r) => s+r.CUSTO_T, 0);
   document.getElementById('summaryRowA7').innerHTML = `
     <div class="summary-card"><div class="label">Itens filtrados</div><div class="value">${rows.length}</div></div>
-    <div class="summary-card red"><div class="label">Soma Custo T. menor que 0</div><div class="value">${fmtCurrency(somaCustoTMenorZero)}</div></div>
-    <div class="summary-card teal"><div class="label">Soma Custo T. maior que 0</div><div class="value">${fmtCurrency(somaCustoTMaiorZero)}</div></div>`;
+    <div class="summary-card amber"><div class="label">Soma Diferença</div><div class="value">${totD.toLocaleString('pt-BR',{maximumFractionDigits:2})}</div></div>
+    <div class="summary-card ${totC<0?'red':'teal'}"><div class="label">Soma Custo T.</div><div class="value">${fmtCurrency(totC)}</div></div>`;
 }
 
 function renderTableA7() {
   const body = document.getElementById('tableBodyA7');
-  enableColumnResize(document.getElementById('resultTableA7'));
   if (!stateA7.filtered.length) {
     body.innerHTML = `<tr><td colspan="12"><div class="empty-state">Nenhum item encontrado com os filtros atuais.</div></td></tr>`;
   } else {
@@ -2389,15 +2308,9 @@ document.getElementById('printA7Btn').addEventListener('click', () => {
   if (!stateA7.filtered.length) { showError('Não há itens para imprimir.'); return; }
   const rows = stateA7.filtered;
   const dateStr = new Date().toLocaleDateString('pt-BR');
-  const tableRows = rows.map((r, i) => {
-    const cls = i%2===0 ? 'row-even' : 'row-odd';
-    if (r.EST_AP === 0) {
-      return `<tr class="${cls}"><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>`;
-    }
-    return `<tr class="${cls}">
+  const tableRows = rows.map((r, i) => `<tr class="${i%2===0?'row-even':'row-odd'}">
     <td>${esc(r.COD_BARRAS)}</td><td>${esc(r.EMBALAGEM)}</td><td>${esc(r.ETIQUETA)}</td>
-    <td></td><td></td><td>${esc(String(r.FABRICANTE??'').slice(0,7))}</td></tr>`;
-  }).join('');
+    <td></td><td></td><td>${esc(String(r.FABRICANTE??'').slice(0,7))}</td></tr>`).join('');
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
 <title>ALPHA7 — ${dateStr}</title>
 <style>
@@ -2407,7 +2320,7 @@ document.getElementById('printA7Btn').addEventListener('click', () => {
   table{width:100%;border-collapse:collapse;font-size:10.5px;}
   thead th{background:#eee;text-align:left;padding:6px 8px;border:1px solid #ccc;text-transform:uppercase;font-size:9.5px;}
   tbody td{padding:5px 8px;border:1px solid #ddd;}
-  tr.row-even{background:#dfe5eb;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  tr.row-even{background:#f4f5f6;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   tr.row-odd{background:#fff;}thead{display:table-header-group;}tr{page-break-inside:avoid;}
 </style></head><body>
 <h1>Conferência ALPHA7</h1>
