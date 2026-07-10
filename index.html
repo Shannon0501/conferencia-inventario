@@ -464,6 +464,16 @@ thead th{
 thead th:hover{color:var(--text);}
 thead th .arrow{opacity:0.4; margin-left:4px;}
 thead th.sorted .arrow{opacity:1; color:var(--amber);}
+thead th{position:relative;}
+.col-resizer{
+  position:absolute;
+  right:0; top:0; bottom:0;
+  width:6px;
+  cursor:col-resize;
+  z-index:2;
+  user-select:none;
+}
+.col-resizer:hover, .col-resizer.active{background:var(--amber);}
 tbody td{
   padding:9px 12px;
   border-bottom:1px solid var(--line-soft);
@@ -1838,23 +1848,23 @@ function applyFiltersAndRender() {
 
 function renderSummary() {
   const rows = state.filtered;
-  const totalDifer = rows.reduce((s, r) => s + r.DIFER, 0);
-  const totalCustoT = rows.reduce((s, r) => s + r.CUSTO_T, 0);
-  const positivos = rows.filter(r => r.CUSTO_T > 0).length;
+  const custoNeg = rows.filter(r => r.CUSTO_T < 0).reduce((s, r) => s + r.CUSTO_T, 0);
+  const custoPos = rows.filter(r => r.CUSTO_T > 0).reduce((s, r) => s + r.CUSTO_T, 0);
   const negativos = rows.filter(r => r.CUSTO_T < 0).length;
+  const positivos = rows.filter(r => r.CUSTO_T > 0).length;
 
   document.getElementById('summaryRow').innerHTML = `
     <div class="summary-card">
       <div class="label">Itens filtrados</div>
       <div class="value">${rows.length}</div>
     </div>
-    <div class="summary-card amber">
-      <div class="label">Soma Difer.</div>
-      <div class="value">${totalDifer.toLocaleString('pt-BR', {maximumFractionDigits:2})}</div>
+    <div class="summary-card red">
+      <div class="label">Soma Custo T. &lt; 0</div>
+      <div class="value">${fmtCurrency(custoNeg)}</div>
     </div>
-    <div class="summary-card ${totalCustoT < 0 ? 'red' : 'teal'}">
-      <div class="label">Soma Custo T.</div>
-      <div class="value">${fmtCurrency(totalCustoT)}</div>
+    <div class="summary-card teal">
+      <div class="label">Soma Custo T. &gt; 0</div>
+      <div class="value">${fmtCurrency(custoPos)}</div>
     </div>
     <div class="summary-card red">
       <div class="label">Itens c/ custo negativo</div>
@@ -2019,16 +2029,19 @@ function printResultTable() {
     let cls = '';
     if (r.COR === 'vermelho') cls = 'row-red';
     else if (r.COR === 'amarelo') cls = 'row-yellow';
-    else cls = (i % 2 === 0) ? 'row-even' : 'row-odd'; // listras alternadas só onde não há cor de alerta
+    else cls = (i % 2 === 0) ? 'row-even' : 'row-odd';
+
+    // QTD U. = 0 → linha vazia (só mantém a estrutura para não perder a cor de fundo)
+    const vazio = r.QTD_U === 0;
     return `
     <tr class="${cls}">
-      <td>${esc(r.SETOR)}</td>
-      <td class="num">${r.AREA !== null && r.AREA !== undefined ? r.AREA : ''}</td>
-      <td>${esc(r.CODIGO)}</td>
-      <td>${esc(r.DESCRICAO)}</td>
-      <td>${esc(r.ETIQUETA)}</td>
-      <td class="num">${r.QTD_U.toLocaleString('pt-BR')}</td>
-      <td>${esc(String(r.FABRICANTE ?? '').slice(0, 7))}</td>
+      <td>${vazio ? '' : esc(r.SETOR)}</td>
+      <td class="num">${vazio ? '' : (r.AREA !== null && r.AREA !== undefined ? r.AREA : '')}</td>
+      <td>${vazio ? '' : esc(r.CODIGO)}</td>
+      <td>${vazio ? '' : esc(r.DESCRICAO)}</td>
+      <td>${vazio ? '' : esc(r.ETIQUETA)}</td>
+      <td class="num">${vazio ? '' : r.QTD_U.toLocaleString('pt-BR')}</td>
+      <td>${vazio ? '' : esc(String(r.FABRICANTE ?? '').slice(0, 7))}</td>
     </tr>
   `;
   }).join('');
@@ -2046,22 +2059,22 @@ function printResultTable() {
   .meta { font-size:11px; color:#555; margin-bottom:14px; }
   table { width:100%; border-collapse:collapse; font-size:10.5px; }
   thead th {
-    background:#eee; text-align:left; padding:6px 8px; border:1px solid #ccc;
+    background:#bbb; text-align:left; padding:6px 8px; border:1px solid #999;
     text-transform:uppercase; font-size:9.5px; letter-spacing:0.03em;
   }
-  tbody td { padding:5px 8px; border:1px solid #ddd; }
+  tbody td { padding:5px 8px; border:1px solid #bbb; }
   td.num { text-align:right; font-variant-numeric:tabular-nums; }
   tr { page-break-inside: avoid; }
   thead { display: table-header-group; }
-  tr.row-red { background:#fbdcd8; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  tr.row-yellow { background:#fbecc4; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  tr.row-even { background:#f4f5f6; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  tr.row-red { background:#f5a89e; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  tr.row-yellow { background:#f5d97a; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  tr.row-even { background:#d0d4d8; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   tr.row-odd { background:#ffffff; }
 </style>
 </head>
 <body>
   <h1>Conferência de Inventário</h1>
-  <div class="meta">Gerado em ${dateStr} · ${rows.length} item(ns)</div>
+  <div class="meta">Gerado em ${dateStr} · ${rows.length} item(ns) &nbsp;&nbsp;&nbsp; Colaborador: ______________________</div>
   <table>
     <thead>
       <tr>
@@ -2188,12 +2201,16 @@ function applyFiltersA7AndRender() {
 
 function renderSummaryA7() {
   const rows = stateA7.filtered;
-  const totD = rows.reduce((s,r) => s+r.DIFERENCA, 0);
-  const totC = rows.reduce((s,r) => s+r.CUSTO_T, 0);
+  const custoNeg = rows.filter(r => r.CUSTO_T < 0).reduce((s,r) => s+r.CUSTO_T, 0);
+  const custoPos = rows.filter(r => r.CUSTO_T > 0).reduce((s,r) => s+r.CUSTO_T, 0);
+  const negativos = rows.filter(r => r.CUSTO_T < 0).length;
+  const positivos = rows.filter(r => r.CUSTO_T > 0).length;
   document.getElementById('summaryRowA7').innerHTML = `
     <div class="summary-card"><div class="label">Itens filtrados</div><div class="value">${rows.length}</div></div>
-    <div class="summary-card amber"><div class="label">Soma Diferença</div><div class="value">${totD.toLocaleString('pt-BR',{maximumFractionDigits:2})}</div></div>
-    <div class="summary-card ${totC<0?'red':'teal'}"><div class="label">Soma Custo T.</div><div class="value">${fmtCurrency(totC)}</div></div>`;
+    <div class="summary-card red"><div class="label">Soma Custo T. &lt; 0</div><div class="value">${fmtCurrency(custoNeg)}</div></div>
+    <div class="summary-card teal"><div class="label">Soma Custo T. &gt; 0</div><div class="value">${fmtCurrency(custoPos)}</div></div>
+    <div class="summary-card red"><div class="label">Itens c/ custo negativo</div><div class="value">${negativos}</div></div>
+    <div class="summary-card teal"><div class="label">Itens c/ custo positivo</div><div class="value">${positivos}</div></div>`;
 }
 
 function renderTableA7() {
@@ -2308,9 +2325,19 @@ document.getElementById('printA7Btn').addEventListener('click', () => {
   if (!stateA7.filtered.length) { showError('Não há itens para imprimir.'); return; }
   const rows = stateA7.filtered;
   const dateStr = new Date().toLocaleDateString('pt-BR');
-  const tableRows = rows.map((r, i) => `<tr class="${i%2===0?'row-even':'row-odd'}">
-    <td>${esc(r.COD_BARRAS)}</td><td>${esc(r.EMBALAGEM)}</td><td>${esc(r.ETIQUETA)}</td>
-    <td></td><td></td><td>${esc(String(r.FABRICANTE??'').slice(0,7))}</td></tr>`).join('');
+  const tableRows = rows.map((r, i) => {
+    const vazio = r.EST_AP === 0; // Est. Apurado = 0 → linha vazia
+    let cls = '';
+    if (r.COR === 'vermelho') cls = 'row-red';
+    else if (r.COR === 'amarelo') cls = 'row-yellow';
+    else cls = i % 2 === 0 ? 'row-even' : 'row-odd';
+    return `<tr class="${cls}">
+    <td>${vazio ? '' : esc(r.COD_BARRAS)}</td>
+    <td>${vazio ? '' : esc(r.EMBALAGEM)}</td>
+    <td>${vazio ? '' : esc(r.ETIQUETA)}</td>
+    <td></td><td></td>
+    <td>${vazio ? '' : esc(String(r.FABRICANTE??'').slice(0,7))}</td></tr>`;
+  }).join('');
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
 <title>ALPHA7 — ${dateStr}</title>
 <style>
@@ -2318,13 +2345,15 @@ document.getElementById('printA7Btn').addEventListener('click', () => {
   body{font-family:Arial,sans-serif;color:#111;margin:0;padding:0 16px;}
   h1{font-size:16px;margin:16px 0 2px;}.meta{font-size:11px;color:#555;margin-bottom:14px;}
   table{width:100%;border-collapse:collapse;font-size:10.5px;}
-  thead th{background:#eee;text-align:left;padding:6px 8px;border:1px solid #ccc;text-transform:uppercase;font-size:9.5px;}
-  tbody td{padding:5px 8px;border:1px solid #ddd;}
-  tr.row-even{background:#f4f5f6;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  thead th{background:#bbb;text-align:left;padding:6px 8px;border:1px solid #999;text-transform:uppercase;font-size:9.5px;}
+  tbody td{padding:5px 8px;border:1px solid #bbb;}
+  tr.row-red{background:#f5a89e;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  tr.row-yellow{background:#f5d97a;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  tr.row-even{background:#d0d4d8;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   tr.row-odd{background:#fff;}thead{display:table-header-group;}tr{page-break-inside:avoid;}
 </style></head><body>
 <h1>Conferência ALPHA7</h1>
-<div class="meta">Gerado em ${dateStr} · ${rows.length} item(ns)</div>
+<div class="meta">Gerado em ${dateStr} · ${rows.length} item(ns) &nbsp;&nbsp;&nbsp; Colaborador: ______________________</div>
 <table><thead><tr>
   <th>Código de Barras</th><th>Embalagem</th><th>Etiqueta</th>
   <th>Qtd Est</th><th>Qtd Loja</th><th>Fabricante</th>
@@ -2335,6 +2364,47 @@ document.getElementById('printA7Btn').addEventListener('click', () => {
   if (!pw) { showError('Pop-up bloqueado. Permita pop-ups para imprimir.'); return; }
   pw.document.open(); pw.document.write(html); pw.document.close();
 });
+
+/* =========================================================
+   COLUNAS REDIMENSIONÁVEIS POR ARRASTAR
+   ========================================================= */
+function ativarResizeColunas(tableId) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  table.querySelectorAll('.col-resizer').forEach(r => r.remove());
+  table.querySelectorAll('thead th').forEach(th => {
+    const resizer = document.createElement('div');
+    resizer.className = 'col-resizer';
+    th.appendChild(resizer);
+    let startX, startW;
+    resizer.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      startX = e.pageX;
+      startW = th.offsetWidth;
+      resizer.classList.add('active');
+      const onMove = (e) => {
+        const diff = e.pageX - startX;
+        const w = Math.max(40, startW + diff) + 'px';
+        th.style.width = w;
+        th.style.minWidth = w;
+      };
+      const onUp = () => {
+        resizer.classList.remove('active');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
+}
+
+// ativa resize logo após cada renderização de tabela
+const _renderTableOrig = renderTable;
+renderTable = function() { _renderTableOrig(); ativarResizeColunas('resultTable'); };
+const _renderTableA7Orig = renderTableA7;
+renderTableA7 = function() { _renderTableA7Orig(); ativarResizeColunas('resultTableA7'); };
 
 updateStatus();
 </script>
