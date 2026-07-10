@@ -2055,17 +2055,27 @@ function printResultTable() {
   @page { size: A4 landscape; margin: 12mm; }
   * { box-sizing: border-box; }
   body { font-family: Arial, Helvetica, sans-serif; color:#111; margin:0; padding:0 16px; }
-  h1 { font-size:16px; margin:16px 0 2px; }
-  .meta { font-size:11px; color:#555; margin-bottom:14px; }
   table { width:100%; border-collapse:collapse; font-size:10.5px; }
+  thead { display: table-header-group; }
   thead th {
     background:#bbb; text-align:left; padding:6px 8px; border:1px solid #999;
     text-transform:uppercase; font-size:9.5px; letter-spacing:0.03em;
   }
+  tr.print-header-row th {
+    background:#fff; border:none; padding:0 0 10px; text-transform:none;
+  }
+  .print-header { border-bottom:2px solid #333; padding-bottom:8px; }
+  .print-header h1 { font-size:16px; margin:14px 0 8px; }
+  .print-header .meta-row {
+    display:flex; align-items:center; justify-content:space-between; font-size:11px; color:#555;
+  }
+  .print-header .assinatura { display:flex; align-items:center; gap:10px; font-size:11.5px; color:#111; }
+  .print-header .sig-line {
+    display:inline-block; width:240px; height:30px; border-bottom:1.5px solid #333;
+  }
   tbody td { padding:5px 8px; border:1px solid #bbb; }
   td.num { text-align:right; font-variant-numeric:tabular-nums; }
   tr { page-break-inside: avoid; }
-  thead { display: table-header-group; }
   tr.row-red { background:#f5a89e; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   tr.row-yellow { background:#f5d97a; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   tr.row-even { background:#d0d4d8; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
@@ -2073,10 +2083,19 @@ function printResultTable() {
 </style>
 </head>
 <body>
-  <h1>Conferência de Inventário</h1>
-  <div class="meta">Gerado em ${dateStr} · ${rows.length} item(ns) &nbsp;&nbsp;&nbsp; Colaborador: ______________________</div>
   <table>
     <thead>
+      <tr class="print-header-row">
+        <th colspan="7">
+          <div class="print-header">
+            <h1>Conferência de Inventário</h1>
+            <div class="meta-row">
+              <span>Gerado em ${dateStr} · ${rows.length} item(ns)</span>
+              <span class="assinatura">Colaborador: <span class="sig-line"></span></span>
+            </div>
+          </div>
+        </th>
+      </tr>
       <tr>
         <th>Setor</th><th>Área</th><th>Código de Barras</th><th>Descrição</th><th>Etiqueta</th>
         <th>Qtd U.</th><th>Fabricante</th>
@@ -2326,38 +2345,54 @@ document.getElementById('printA7Btn').addEventListener('click', () => {
   const rows = stateA7.filtered;
   const dateStr = new Date().toLocaleDateString('pt-BR');
   const tableRows = rows.map((r, i) => {
-    const vazio = r.EST_AP === 0; // Est. Apurado = 0 → linha vazia
     let cls = '';
     if (r.COR === 'vermelho') cls = 'row-red';
     else if (r.COR === 'amarelo') cls = 'row-yellow';
     else cls = i % 2 === 0 ? 'row-even' : 'row-odd';
     return `<tr class="${cls}">
-    <td>${vazio ? '' : esc(r.COD_BARRAS)}</td>
-    <td>${vazio ? '' : esc(r.EMBALAGEM)}</td>
-    <td>${vazio ? '' : esc(r.ETIQUETA)}</td>
+    <td>${esc(r.COD_BARRAS)}</td>
+    <td>${esc(r.EMBALAGEM)}</td>
+    <td>${esc(r.ETIQUETA)}</td>
     <td></td><td></td>
-    <td>${vazio ? '' : esc(String(r.FABRICANTE??'').slice(0,7))}</td></tr>`;
+    <td>${esc(String(r.FABRICANTE??'').slice(0,7))}</td></tr>`;
   }).join('');
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
 <title>ALPHA7 — ${dateStr}</title>
 <style>
   @page{size:A4 landscape;margin:12mm;}*{box-sizing:border-box;}
   body{font-family:Arial,sans-serif;color:#111;margin:0;padding:0 16px;}
-  h1{font-size:16px;margin:16px 0 2px;}.meta{font-size:11px;color:#555;margin-bottom:14px;}
   table{width:100%;border-collapse:collapse;font-size:10.5px;}
+  thead{display:table-header-group;}
   thead th{background:#bbb;text-align:left;padding:6px 8px;border:1px solid #999;text-transform:uppercase;font-size:9.5px;}
+  tr.print-header-row th{background:#fff;border:none;padding:0 0 10px;text-transform:none;}
+  .print-header{border-bottom:2px solid #333;padding-bottom:8px;}
+  .print-header h1{font-size:16px;margin:14px 0 8px;}
+  .print-header .meta-row{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:#555;}
+  .print-header .assinatura{display:flex;align-items:center;gap:10px;font-size:11.5px;color:#111;}
+  .print-header .sig-line{display:inline-block;width:240px;height:30px;border-bottom:1.5px solid #333;}
   tbody td{padding:5px 8px;border:1px solid #bbb;}
   tr.row-red{background:#f5a89e;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   tr.row-yellow{background:#f5d97a;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   tr.row-even{background:#d0d4d8;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-  tr.row-odd{background:#fff;}thead{display:table-header-group;}tr{page-break-inside:avoid;}
+  tr.row-odd{background:#fff;}tr{page-break-inside:avoid;}
 </style></head><body>
-<h1>Conferência ALPHA7</h1>
-<div class="meta">Gerado em ${dateStr} · ${rows.length} item(ns) &nbsp;&nbsp;&nbsp; Colaborador: ______________________</div>
-<table><thead><tr>
+<table><thead>
+<tr class="print-header-row">
+  <th colspan="6">
+    <div class="print-header">
+      <h1>Conferência ALPHA7</h1>
+      <div class="meta-row">
+        <span>Gerado em ${dateStr} · ${rows.length} item(ns)</span>
+        <span class="assinatura">Colaborador: <span class="sig-line"></span></span>
+      </div>
+    </div>
+  </th>
+</tr>
+<tr>
   <th>Código de Barras</th><th>Embalagem</th><th>Etiqueta</th>
   <th>Qtd Est</th><th>Qtd Loja</th><th>Fabricante</th>
-</tr></thead><tbody>${tableRows}</tbody></table>
+</tr>
+</thead><tbody>${tableRows}</tbody></table>
 <script>window.onload=function(){window.print();};<\/script>
 </body></html>`;
   const pw = window.open('','_blank');
