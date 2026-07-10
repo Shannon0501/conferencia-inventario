@@ -2031,17 +2031,17 @@ function printResultTable() {
     else if (r.COR === 'amarelo') cls = 'row-yellow';
     else cls = (i % 2 === 0) ? 'row-even' : 'row-odd';
 
-    // QTD U. = 0 → linha vazia (só mantém a estrutura para não perder a cor de fundo)
-    const vazio = r.QTD_U === 0;
+    // QTD U. = 0 → só a célula de Qtd U. fica vazia; o resto dos dados da linha aparece normalmente
+    const qtdVazia = r.QTD_U === 0;
     return `
     <tr class="${cls}">
-      <td>${vazio ? '' : esc(r.SETOR)}</td>
-      <td class="num">${vazio ? '' : (r.AREA !== null && r.AREA !== undefined ? r.AREA : '')}</td>
-      <td>${vazio ? '' : esc(r.CODIGO)}</td>
-      <td>${vazio ? '' : esc(r.DESCRICAO)}</td>
-      <td>${vazio ? '' : esc(r.ETIQUETA)}</td>
-      <td class="num">${vazio ? '' : r.QTD_U.toLocaleString('pt-BR')}</td>
-      <td>${vazio ? '' : esc(String(r.FABRICANTE ?? '').slice(0, 7))}</td>
+      <td>${esc(r.SETOR)}</td>
+      <td class="num">${(r.AREA !== null && r.AREA !== undefined ? r.AREA : '')}</td>
+      <td>${esc(r.CODIGO)}</td>
+      <td>${esc(r.DESCRICAO)}</td>
+      <td>${esc(r.ETIQUETA)}</td>
+      <td class="num">${qtdVazia ? '' : r.QTD_U.toLocaleString('pt-BR')}</td>
+      <td>${esc(String(r.FABRICANTE ?? '').slice(0, 7))}</td>
     </tr>
   `;
   }).join('');
