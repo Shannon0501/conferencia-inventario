@@ -2031,8 +2031,8 @@ function printResultTable() {
     else if (r.COR === 'amarelo') cls = 'row-yellow';
     else cls = (i % 2 === 0) ? 'row-even' : 'row-odd';
 
-    // QTD U. = 0 → só a célula de Qtd U. fica vazia; o resto dos dados da linha aparece normalmente
-    const qtdVazia = r.QTD_U === 0;
+    // QTD A. = 0 → só a célula de Qtd U. fica vazia; o resto dos dados da linha aparece normalmente
+    const qtdVazia = r.QTD_A === 0;
     return `
     <tr class="${cls}">
       <td>${esc(r.SETOR)}</td>
